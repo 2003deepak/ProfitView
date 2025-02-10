@@ -1,0 +1,36 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "nodemon app.js",
+    "frontend": "npm run dev --prefix ../frontend"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "authenticator": "^1.1.5",
+    "axios": "^1.7.9",
+    "backend": "^0.0.0",
+    "bcrypt": "^5.1.1",
+    "concurrently": "^9.1.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
+    "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
+    "express": "^4.21.1",
+    "frontend": "file:../frontend",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.11.0",
+    "mongoose": "^8.8.3",
+    "nodemon": "^3.1.9",
+    "otplib": "^12.0.1",
+    "socket-io": "^1.0.0",
+    "socket.io": "^4.8.1",
+    "ws": "^8.18.0"
+  }
+}
