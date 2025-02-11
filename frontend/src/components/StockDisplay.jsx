@@ -1,50 +1,13 @@
-import React, { useState, useEffect } from "react";
-import themeStore from "../store/themeStore";
+import React from "react";
+import useStockStore from "../store/stockStore"; // ✅ Import Zustand stock store
+import themeStore from "../store/themeStore"; // ✅ Import theme store
 
 const StockDisplay = ({ stockName }) => {
   const { theme } = themeStore((state) => state);
+  const { stocks } = useStockStore(); // ✅ Only fetch stock data, don't connect again
+  const stockData = stocks[stockName] || { stockName, price: 0, percentageChange: 0 };
 
-  const [stockData, setStockData] = useState({
-    stockName,
-    price: 0,
-    percentageChange: 0,
-  });
-
-  useEffect(() => {
-    const socket = new WebSocket("ws://localhost:8080");
-
-    socket.onopen = () => {
-      console.log("WebSocket connection established");
-    };
-
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      // Update stock data only if it matches the stockName prop
-      if (data.stockName === stockName) {
-        setStockData({
-          stockName: data.stockName,
-          price: parseFloat(data.lp) || 0,
-          percentageChange: parseFloat(data.pc) || 0,
-        });
-      }
-    };
-
-    socket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-
-    socket.onclose = () => {
-      console.log("WebSocket connection closed");
-    };
-
-    return () => {
-      socket.close();
-    };
-  }, [stockName]);
-
-  const { price, percentageChange } = stockData;
-
+  const { price = 0, percentageChange = 0 } = stockData;
   const changeColor = percentageChange > 0 ? "text-green-400" : "text-red-400";
 
   return (

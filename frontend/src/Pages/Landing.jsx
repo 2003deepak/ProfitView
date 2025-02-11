@@ -17,10 +17,12 @@ const Landing = () => {
       }`}>
         
         
-      <h1 className = {`text-4xl font-bold ${
-              theme === 'dark' ? 'text-gray-400 hover:text-[#6a4dfa]' : 'text-gray-600 hover:text-[#6a4dfa]'
-            }`}>Welcome to ProfitView {isLoggedIn ? <h1>True</h1> : <h1>False</h1>}</h1>
-            
+     <h1 className={`text-4xl font-bold ${
+        theme === 'dark' ? 'text-gray-400 hover:text-[#6a4dfa]' : 'text-gray-600 hover:text-[#6a4dfa]'
+        }`}>
+        Welcome to ProfitView {isLoggedIn ? "True" : "False"}
+        </h1>
+
     </div>
   )
 }

@@ -37,7 +37,7 @@ const TopSearchBar = () => {
           className="flex items-center space-x-2 px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 focus:outline-none transition-all"
         >
           <img
-            src="https://via.placeholder.com/40" // Replace with actual user logo
+            src="#" // Replace with actual user logo
             alt="User"
             className="w-10 h-10 rounded-full"
           />

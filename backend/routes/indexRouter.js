@@ -3,8 +3,8 @@ let isLoggedIn = require("../utils/isLoggedIn");
 const router = express.Router();
 
 // Import Controllers
-const register = require("../controllers/IndexController/register");
-const login = require("../controllers/IndexController/login");
+const register = require("../controllers/indexController/register");
+const login = require("../controllers/indexController/login");
 
 
 
@@ -12,7 +12,8 @@ const login = require("../controllers/IndexController/login");
 router.post("/register", isLoggedIn, register);
 
 // Controller for user login
-router.post("/login", isLoggedIn , login);
+router.post("/login", login);
+
 
 
 

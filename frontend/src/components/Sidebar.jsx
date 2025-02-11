@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
+import axios from 'axios';
 import themeStore from "../store/themeStore";
 import { ChevronDown, ChevronUp, Home, User, Settings, LogOut, Menu, Sun, Moon, TrendingUp } from 'lucide-react';
 
@@ -8,6 +9,7 @@ const Sidebar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const navigate = useNavigate();
+
 
   const { theme, changeTheme } = themeStore((state) => state);
 
@@ -21,14 +23,10 @@ const Sidebar = () => {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch('http://localhost:3000/user/api/logout', {
-        method: 'POST',
-        credentials: 'include'
-      });
-      const data = await response.json();
-      
-      if (data.status === 'success') {
-        toast.success(data.message);
+      const response = await axios.post('http://localhost:3000/user/api/logout', {}, { withCredentials: true });
+  
+      if (response.data.status === 'success') {
+        toast.success(response.data.message);
         setTimeout(() => navigate('/login'), 2000);
       }
     } catch (error) {

@@ -28,7 +28,7 @@ let WebSocketClient = function (cred, params) {
                //callbacks to the app are set here
                this.set_callbacks(callbacks);
 
-               ws = new web_socket(url, [], { rejectUnauthorized: false });
+               ws = new web_socket(url,[], { rejectUnauthorized: false });
 
                ws.onopen = function onOpen(evt) {
                     setInterval(function () {
@@ -37,12 +37,12 @@ let WebSocketClient = function (cred, params) {
                     }, timeout);
 
                     //prepare the data
-                    let values              = { "t": "c" };
+                    let values  = { "t": "c" };
                     values["uid"]       = params.uid;
                     values["actid"]     = params.actid;
                     values["susertoken"] = params.apikey;
                     values["source"]    = "API";  
-                    // console.log(JSON.stringify(values));  
+                    //console.log(JSON.stringify(values));  
                     ws.send(JSON.stringify(values));            
                     resolve()
 
@@ -50,7 +50,7 @@ let WebSocketClient = function (cred, params) {
                ws.onmessage = function (evt) {
                     
                     var result = JSON.parse(evt.data);     
-                    console.log(result);
+                    //console.log(result);
 
                     if(result.t == 'ck')
                     {

@@ -1,13 +1,16 @@
-import React from "react";
+import React, { useEffect } from "react";
 import authStore from "../store/authStore";
 import Sidebar from "../components/Sidebar";
 import TopSearchBar from "../components/TopSearchBar";
 import StockDisplay from "../components/StockDisplay";
+import useStockStore from "../store/stockStore";
 import themeStore from "../store/themeStore";
 
 const Dashboard = () => {
   const { isLoggedIn, role } = authStore((state) => state);
   const { theme } = themeStore((state) => state);
+  const { connectToSSE } = useStockStore(); // ✅ Get connect function only
+
 
   return (
     <div
@@ -25,9 +28,9 @@ const Dashboard = () => {
 
         {/* Stock Cards Section */}
         <div className="flex flex-wrap gap-6 p-6 justify-center">
-          <StockDisplay stockName="Nifty50" />
-          <StockDisplay stockName="Bank Nifty" />
-          <StockDisplay stockName="Sensex" />
+          <StockDisplay stockName="Nifty 50" />
+          <StockDisplay stockName="Nifty Bank" />
+          <StockDisplay stockName="SENSEX" />
         </div>
       </div>
     </div>
