@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 const themeStore = create((set) => ({
   theme: "dark", // Initial state
+  isSidebarOpen: true,
   
   changeTheme: () => set((state) => ({
 

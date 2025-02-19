@@ -9,7 +9,14 @@ import themeStore from "../store/themeStore";
 const Dashboard = () => {
   const { isLoggedIn, role } = authStore((state) => state);
   const { theme } = themeStore((state) => state);
-  const { connectToSSE } = useStockStore(); // ✅ Get connect function only
+
+  const {stocks} = useStockStore((state) => state);
+
+  useEffect(() => {
+    console.log(stocks);
+  }, [stocks]);
+
+ 
 
 
   return (
@@ -32,6 +39,14 @@ const Dashboard = () => {
           <StockDisplay stockName="Nifty Bank" />
           <StockDisplay stockName="SENSEX" />
         </div>
+
+        <div className="flex flex-wrap gap-6 p-6 justify-center">
+          <p></p>
+        </div>
+
+        
+
+        
       </div>
     </div>
   );

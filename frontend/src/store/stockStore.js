@@ -2,11 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import axios from 'axios';
 
-const STOCK_MAPPINGS = {
-    26009: "Nifty Bank",
-    1: "SENSEX",
-    26000: "Nifty 50"
-};
+
 
 const useStockStore = create(
   persist(
@@ -41,11 +37,11 @@ const useStockStore = create(
                       try {
                           const updates = JSON.parse(event.data);
                           const formattedUpdates = updates.reduce((acc, stock) => {
-                              const stockId = stock.symbol;
+                              const stockId = stock.name;
                               const prevStock = get().stocks[stockId];
 
                               acc[stockId] = {
-                                  symbol: stock.symbol,
+                                  name: stock.name,
                                   price: stock.price === 0 && prevStock ? prevStock.price : parseFloat(stock.price) || 0,
                                   lastUpdated: Date.now()
                               };

@@ -20,6 +20,14 @@ const userSchema = mongoose.Schema({
     email: { 
       type: String, 
       default: null 
+    },
+    balance : {
+      type : Number,
+      default : 1000000
+    },
+    holdings: {
+      type : mongoose.Schema.ObjectId,
+      ref : "holding"
     }
   });
   

@@ -5,7 +5,7 @@ import TopSearchBar from "../components/TopSearchBar";
 import themeStore from "../store/themeStore";
 import useStockStore from "../store/stockStore";
 
-const V40Stocks = () => {
+const V40NextStocks = () => {
   const { theme } = themeStore((state) => state);
   const [searchTerm, setSearchTerm] = useState("");
   const { stocks } = useStockStore();
@@ -13,53 +13,46 @@ const V40Stocks = () => {
 
   const isDark = theme === "dark";
 
-  const V40stocks = [
-    { name: "Eris Lifesciences", symbol: "ERIS", price: "₹1,266.30" },
-    { name: "ICICI Securities", symbol: "ICICISEC", price: "₹796.65" },
-    { name: "Angel One", symbol: "ANGELONE", price: "₹2,525.30" },
-    { name: "Nippon India ETF Bank BeES", symbol: "BANKBEES", price: "₹498.82" },
-    { name: "Nippon India ETF Nifty 50 BeES", symbol: "NIFTYBEES", price: "₹257.91" },
-    { name: "Bajaj Finance", symbol: "BAJFINANCE", price: "₹7,291.65" },
-    { name: "Bajaj Holdings & Investment", symbol: "BAJAJHLDNG", price: "₹10,797.00" },
-    { name: "Bajaj Finserv", symbol: "BAJAJFINSV", price: "₹1,717.00" },
-    { name: "ICICI Lombard General Insurance Company", symbol: "ICICIGI", price: "₹1,902.50" },
-    { name: "ICICI Prudential Life Insurance Company", symbol: "ICICIPRULI", price: "₹635.55" },
-    { name: "HDFC Life Insurance Company", symbol: "HDFCLIFE", price: "₹624.00" },
-    { name: "Bajaj Auto", symbol: "BAJAJ-AUTO", price: "₹8,468.55" },
-    { name: "Akzo Nobel India", symbol: "AKZOINDIA", price: "₹3,812.35" },
-    { name: "Berger Paints India", symbol: "BERGEPAINT", price: "₹475.20" },
-    { name: "Asian Paints", symbol: "ASIANPAINT", price: "₹2,260.35" },
-    { name: "Pfizer", symbol: "PFIZER", price: "₹4,944.50" },
-    { name: "Abbott India", symbol: "ABBOTINDIA", price: "₹21,522.50" },
-    { name: "GlaxoSmithKline Pharmaceuticals", symbol: "GLAXO", price: "₹1,360.20" },
-    { name: "Whirlpool Of India", symbol: "WHIRLPOOL", price: "₹1,710.40" },
-    { name: "Havells India", symbol: "HAVELLS", price: "₹1,322.65" },
-    { name: "Bata India", symbol: "BATAINDIA", price: "₹1,498.35" },
-    { name: "Page Industries", symbol: "PAGEIND", price: "₹38,004.85" },
-    { name: "Titan Company", symbol: "TITAN", price: "₹3,186.20" },
-    { name: "ITC", symbol: "ITC", price: "₹384.45" },
-    { name: "Marico", symbol: "MARICO", price: "₹503.15" },
-    { name: "Gillette India", symbol: "GILLETTE", price: "₹6,158.25" },
-    { name: "Dabur India", symbol: "DABUR", price: "₹517.65" },
-    { name: "Colgate-Palmolive (India)", symbol: "COLPAL", price: "₹1,698.85" },
-    { name: "Pidilite Industries", symbol: "PIDILITIND", price: "₹2,462.35" },
-    { name: "Procter & Gamble Hygiene & Health Care", symbol: "PGHH", price: "₹12,498.15" },
-    { name: "Nestle India", symbol: "NESTLEIND", price: "₹20,415.30" },
-    { name: "Hindustan Unilever", symbol: "HINDUNILVR", price: "₹2,642.10" },
-    { name: "Infosys", symbol: "INFY", price: "₹1,324.55" },
-    { name: "TCS", symbol: "TCS", price: "₹3,255.20" },
-    { name: "HCL Technologies", symbol: "HCLTECH", price: "₹1,232.80" },
-    { name: "HDFC Bank", symbol: "HDFCBANK", price: "₹1,587.40" },
-    { name: "Axis Bank", symbol: "AXISBANK", price: "₹931.25" },
-    { name: "ICICI Bank", symbol: "ICICIBANK", price: "₹1,021.85" },
-    { name: "Kotak Mahindra Bank", symbol: "KOTAKBANK", price: "₹1,765.35" },
+  const v40NextStocks = [
+    { name: "Sun TV Network", symbol: "SUNTV", price: "₹547.20" , symbol :13404 },
+    { name: "Radico Khaitan", symbol: "RADICO", price: "₹1,144.35" , symbol :10990 },
+    { name: "United Spirits", symbol: "UNITEDSPIRITS", price: "₹865.40" , symbol :10447 },
+    { name: "Eicher Motors", symbol: "EICHERMOT", price: "₹3,293.15" , symbol :910 },
+    { name: "Bosch", symbol: "BOSCHLTD", price: "₹18,453.50" , symbol :2181 },
+    { name: "TTK Prestige", symbol: "TTKPRESTIG", price: "₹9,875.00" , symbol :3546 },
+    { name: "V Guard Industries", symbol: "VGUARD", price: "₹275.45" , symbol :15362 },
+    { name: "Symphony", symbol: "SYMPHONY", price: "₹1,152.65", symbol :24190 },
+    { name: "Sheela Foam", symbol: "SFL", price: "₹2,980.30", symbol :18056 },
+    { name: "Relaxo Footwears", symbol: "RELAXO", price: "₹948.15", symbol :24225 },
+    { name: "Rajesh Exports", symbol: "RAJESHEXPO", price: "₹774.45", symbol :7401 },
+    { name: "Polycab India", symbol: "POLYCAB", price: "₹4,026.50", symbol :9590 },
+    { name: "Lux Industries", symbol: "LUXIND", price: "₹2,033.75", symbol :11301 },
+    { name: "Honeywell Automation India", symbol: "HONAUT", price: "₹39,800.00", symbol :3417 },
+    { name: "Cera Sanitaryware", symbol: "CERA", price: "₹7,234.80", symbol :15039 },
+    { name: "Dixon Technologies", symbol: "DIXON", price: "₹4,123.25", symbol :21690 },
+    { name: "Finolex Cables", symbol: "FINCABLES", price: "₹826.15", symbol :1038 },
+    { name: "Godrej Consumer Products", symbol: "GODREJCP", price: "₹995.60", symbol :10099 },
+    { name: "3M India", symbol: "3MINDIA", price: "₹26,734.00", symbol :474 },
+    { name: "Kansai Nerolac Paints", symbol: "KANSAINER", price: "₹402.50", symbol :1196 },
+    { name: "Indigo Paints", symbol: "INDIGOPNTS", price: "₹1,396.00", symbol :2048 },
+    { name: "Vinati Organics", symbol: "VINATIORGA", price: "₹1,890.10", symbol :17364 },
+    { name: "Caplin Point Laboratories", symbol: "CAPLIPOINT", price: "₹740.25", symbol :3906 },
+    { name: "Fine Organic Industries", symbol: "FINEORG", price: "₹5,394.50", symbol :3744 },
+    { name: "Dr Lal PathLabs", symbol: "LALPATHLAB", price: "₹2,260.40", symbol :11654 },
+    { name: "Bayer Cropscience", symbol: "BAYERCROP", price: "₹4,800.20", symbol :17927 },
+    { name: "Astrazeneca Pharma India", symbol: "ASTRAZEN", price: "₹3,300.75", symbol :5610 },
+    { name: "SIS", symbol: "SIS", price: "₹417.20", symbol :21501 },
+    { name: "TeamLease Services", symbol: "TEAMLEASE", price: "₹2,473.00", symbol :12716 },
+    { name: "Tata Elxsi", symbol: "TATAELXSI", price: "₹7,023.10", symbol :3411 },
+    { name: "Oracle Financial Services Software", symbol: "OFSS", price: "₹3,525.50", symbol :10738 },
+    { name: "Multi Commodity Exchange of India", symbol: "MCX", price: "₹1,594.60", symbol :31181 },
   ];
 
   // Filter stocks based on search input
   const filteredStocks = Object.entries(stocks)
   .filter(([name]) => 
-    V40stocks.some(stock => stock.name === name) &&
-    V40stocks.some(stock => stock.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    v40NextStocks.some(stock => stock.name === name) &&
+    v40NextStocks.some(stock => stock.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
 
@@ -83,7 +76,7 @@ const V40Stocks = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 px-8 pt-6">
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <TrendingUp className="w-8 h-8 text-blue-500" />
-              V40 Stocks Dashboard
+              V40 Next Stocks Dashboard
             </h1>
             <div className="relative w-full md:w-1/3">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -136,7 +129,7 @@ const V40Stocks = () => {
                     ) : (
                       <tr>
                         <td colSpan="3" className="px-6 py-8 text-center text-gray-400">
-                          No stocks found matching "{searchTerm}"
+                          No stocks found matching
                         </td>
                       </tr>
                     )}
@@ -151,4 +144,4 @@ const V40Stocks = () => {
   );
 };
 
-export default V40Stocks;
+export default V40NextStocks;
