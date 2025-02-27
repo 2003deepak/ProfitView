@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import { TrendingUp, Search } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import TopSearchBar from "../components/TopSearchBar";
@@ -8,12 +8,12 @@ import useStockStore from "../store/stockStore";
 const V40Stocks = () => {
   const { theme } = themeStore((state) => state);
   const [searchTerm, setSearchTerm] = useState("");
-  const { stocks } = useStockStore();
+  const { stocks } = useStockStore((state) => state);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const isDark = theme === "dark";
 
-  const V40stocks = [
+  const v40stocks = [
     { name: "Eris Lifesciences", symbol: "ERIS", price: "₹1,266.30" },
     { name: "ICICI Securities", symbol: "ICICISEC", price: "₹796.65" },
     { name: "Angel One", symbol: "ANGELONE", price: "₹2,525.30" },
@@ -53,14 +53,8 @@ const V40Stocks = () => {
     { name: "Axis Bank", symbol: "AXISBANK", price: "₹931.25" },
     { name: "ICICI Bank", symbol: "ICICIBANK", price: "₹1,021.85" },
     { name: "Kotak Mahindra Bank", symbol: "KOTAKBANK", price: "₹1,765.35" },
+    {name : "JSW Energy" , symbol : "JSW" , price : "Rs 34434"}
   ];
-
-  // Filter stocks based on search input
-  const filteredStocks = Object.entries(stocks)
-  .filter(([name]) => 
-    V40stocks.some(stock => stock.name === name) &&
-    V40stocks.some(stock => stock.name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
 
 
   return (
@@ -114,37 +108,33 @@ const V40Stocks = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredStocks.length > 0 ? (
-                      filteredStocks.map(([stockName, stockData]) => (
+                    
+                      {v40stocks.map((data) => (
                         <tr
-                          key={stockName}
+                          key={data.name}
                           className={`border-t ${
                             isDark ? "border-gray-700 hover:bg-gray-700" : "border-gray-200 hover:bg-gray-50"
                           } transition-colors`}
                         >
-                          <td className="px-6 py-4 font-medium whitespace-nowrap">{stockName}</td>
-                          <td className="px-6 py-4 font-medium whitespace-nowrap">
-                            ₹{stockData.price.toFixed(2)}
+                          <td className="px-6 py-4 font-medium whitespace-nowrap">{data.name}</td>
+                          <td className={`px-6 py-4 font-medium whitespace-nowrap ${stocks[data.name]?.price > stocks[data.name]?.previousClosingPrice ? "text-green-600" : "text-red-600"}`}>
+                            ₹{stocks[data.name]?.price ? `₹${stocks[data.name].price}` : "N/A" }
                           </td>
+                         
                           <td className="px-6 py-4 whitespace-nowrap">
                             <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow transition-transform transform hover:-translate-y-1">
                               View Details
                             </button>
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="3" className="px-6 py-8 text-center text-gray-400">
-                          No stocks found matching "{searchTerm}"
-                        </td>
-                      </tr>
-                    )}
+                      ))}
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
+
+        
         </div>
       </div>
     </div>
@@ -152,3 +142,5 @@ const V40Stocks = () => {
 };
 
 export default V40Stocks;
+
+

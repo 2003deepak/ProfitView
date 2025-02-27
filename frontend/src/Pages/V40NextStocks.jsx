@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState , useEffect } from "react";
 import { TrendingUp, Search } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import TopSearchBar from "../components/TopSearchBar";
@@ -14,47 +14,39 @@ const V40NextStocks = () => {
   const isDark = theme === "dark";
 
   const v40NextStocks = [
-    { name: "Sun TV Network", symbol: "SUNTV", price: "₹547.20" , symbol :13404 },
-    { name: "Radico Khaitan", symbol: "RADICO", price: "₹1,144.35" , symbol :10990 },
-    { name: "United Spirits", symbol: "UNITEDSPIRITS", price: "₹865.40" , symbol :10447 },
-    { name: "Eicher Motors", symbol: "EICHERMOT", price: "₹3,293.15" , symbol :910 },
-    { name: "Bosch", symbol: "BOSCHLTD", price: "₹18,453.50" , symbol :2181 },
-    { name: "TTK Prestige", symbol: "TTKPRESTIG", price: "₹9,875.00" , symbol :3546 },
-    { name: "V Guard Industries", symbol: "VGUARD", price: "₹275.45" , symbol :15362 },
-    { name: "Symphony", symbol: "SYMPHONY", price: "₹1,152.65", symbol :24190 },
-    { name: "Sheela Foam", symbol: "SFL", price: "₹2,980.30", symbol :18056 },
-    { name: "Relaxo Footwears", symbol: "RELAXO", price: "₹948.15", symbol :24225 },
-    { name: "Rajesh Exports", symbol: "RAJESHEXPO", price: "₹774.45", symbol :7401 },
-    { name: "Polycab India", symbol: "POLYCAB", price: "₹4,026.50", symbol :9590 },
-    { name: "Lux Industries", symbol: "LUXIND", price: "₹2,033.75", symbol :11301 },
-    { name: "Honeywell Automation India", symbol: "HONAUT", price: "₹39,800.00", symbol :3417 },
-    { name: "Cera Sanitaryware", symbol: "CERA", price: "₹7,234.80", symbol :15039 },
-    { name: "Dixon Technologies", symbol: "DIXON", price: "₹4,123.25", symbol :21690 },
-    { name: "Finolex Cables", symbol: "FINCABLES", price: "₹826.15", symbol :1038 },
-    { name: "Godrej Consumer Products", symbol: "GODREJCP", price: "₹995.60", symbol :10099 },
-    { name: "3M India", symbol: "3MINDIA", price: "₹26,734.00", symbol :474 },
-    { name: "Kansai Nerolac Paints", symbol: "KANSAINER", price: "₹402.50", symbol :1196 },
-    { name: "Indigo Paints", symbol: "INDIGOPNTS", price: "₹1,396.00", symbol :2048 },
-    { name: "Vinati Organics", symbol: "VINATIORGA", price: "₹1,890.10", symbol :17364 },
-    { name: "Caplin Point Laboratories", symbol: "CAPLIPOINT", price: "₹740.25", symbol :3906 },
-    { name: "Fine Organic Industries", symbol: "FINEORG", price: "₹5,394.50", symbol :3744 },
-    { name: "Dr Lal PathLabs", symbol: "LALPATHLAB", price: "₹2,260.40", symbol :11654 },
-    { name: "Bayer Cropscience", symbol: "BAYERCROP", price: "₹4,800.20", symbol :17927 },
-    { name: "Astrazeneca Pharma India", symbol: "ASTRAZEN", price: "₹3,300.75", symbol :5610 },
-    { name: "SIS", symbol: "SIS", price: "₹417.20", symbol :21501 },
-    { name: "TeamLease Services", symbol: "TEAMLEASE", price: "₹2,473.00", symbol :12716 },
-    { name: "Tata Elxsi", symbol: "TATAELXSI", price: "₹7,023.10", symbol :3411 },
-    { name: "Oracle Financial Services Software", symbol: "OFSS", price: "₹3,525.50", symbol :10738 },
-    { name: "Multi Commodity Exchange of India", symbol: "MCX", price: "₹1,594.60", symbol :31181 },
+    { name: "Sun TV Network", symbol: "SUNTV", price: "₹547.20"  },
+    { name: "Radico Khaitan", symbol: "RADICO", price: "₹1,144.35" },
+    { name: "United Spirits", symbol: "UNITEDSPIRITS", price: "₹865.40"  },
+    { name: "Eicher Motors", symbol: "EICHERMOT", price: "₹3,293.15"},
+    { name: "Bosch", symbol: "BOSCHLTD", price: "₹18,453.50" },
+    { name: "TTK Prestige", symbol: "TTKPRESTIG", price: "₹9,875.00" },
+    { name: "V Guard Industries", symbol: "VGUARD", price: "₹275.45" },
+    { name: "Symphony", symbol: "SYMPHONY", price: "₹1,152.65"},
+    { name: "Sheela Foam", symbol: "SFL", price: "₹2,980.30"},
+    { name: "Relaxo Footwears", symbol: "RELAXO", price: "₹948.15"},
+    { name: "Rajesh Exports", symbol: "RAJESHEXPO", price: "₹774.45"},
+    { name: "Polycab India", symbol: "POLYCAB", price: "₹4,026.50"},
+    { name: "Lux Industries", symbol: "LUXIND", price: "₹2,033.75"},
+    { name: "Honeywell Automation India", symbol: "HONAUT", price: "₹39,800.00"},
+    { name: "Cera Sanitaryware", symbol: "CERA", price: "₹7,234.80" },
+    { name: "Dixon Technologies", symbol: "DIXON", price: "₹4,123.25"},
+    { name: "Finolex Cables", symbol: "FINCABLES", price: "₹826.15" },
+    { name: "Godrej Consumer Products", symbol: "GODREJCP", price: "₹995.60" },
+    { name: "3M India", symbol: "3MINDIA", price: "₹26,734.00" },
+    { name: "Kansai Nerolac Paints", symbol: "KANSAINER", price: "₹402.50"},
+    { name: "Indigo Paints", symbol: "INDIGOPNTS", price: "₹1,396.00"},
+    { name: "Vinati Organics", symbol: "VINATIORGA", price: "₹1,890.10"},
+    { name: "Caplin Point Laboratories", symbol: "CAPLIPOINT", price: "₹740.25" },
+    { name: "Fine Organic Industries", symbol: "FINEORG", price: "₹5,394.50"},
+    { name: "Dr Lal PathLabs", symbol: "LALPATHLAB", price: "₹2,260.40" },
+    { name: "Bayer Cropscience", symbol: "BAYERCROP", price: "₹4,800.20" },
+    { name: "Astrazeneca Pharma India", symbol: "ASTRAZEN", price: "₹3,300.75"},
+    { name: "SIS", symbol: "SIS", price: "₹417.20" },
+    { name: "TeamLease Services", symbol: "TEAMLEASE", price: "₹2,473.00" },
+    { name: "Tata Elxsi", symbol: "TATAELXSI", price: "₹7,023.10" },
+    { name: "Oracle Financial Services Software", symbol: "OFSS", price: "₹3,525.50"},
+    { name: "Multi Commodity Exchange of India", symbol: "MCX", price: "₹1,594.60"},
   ];
-
-  // Filter stocks based on search input
-  const filteredStocks = Object.entries(stocks)
-  .filter(([name]) => 
-    v40NextStocks.some(stock => stock.name === name) &&
-    v40NextStocks.some(stock => stock.name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -107,17 +99,17 @@ const V40NextStocks = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredStocks.length > 0 ? (
-                      filteredStocks.map(([stockName, stockData]) => (
+                    
+                      {v40NextStocks.map((data) => (
                         <tr
-                          key={stockName}
+                          key={data.name}
                           className={`border-t ${
                             isDark ? "border-gray-700 hover:bg-gray-700" : "border-gray-200 hover:bg-gray-50"
                           } transition-colors`}
                         >
-                          <td className="px-6 py-4 font-medium whitespace-nowrap">{stockName}</td>
-                          <td className="px-6 py-4 font-medium whitespace-nowrap">
-                            ₹{stockData.price.toFixed(2)}
+                          <td className="px-6 py-4 font-medium whitespace-nowrap">{data.name}</td>
+                          <td className={`px-6 py-4 font-medium whitespace-nowrap ${stocks[data.name].price > stocks[data.name].previousClosingPrice ? "text-green-600" : "text-red-600"}`}>
+                            ₹{stocks[data.name].price.toFixed(2)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow transition-transform transform hover:-translate-y-1">
@@ -125,14 +117,7 @@ const V40NextStocks = () => {
                             </button>
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="3" className="px-6 py-8 text-center text-gray-400">
-                          No stocks found matching
-                        </td>
-                      </tr>
-                    )}
+                      ))}
                   </tbody>
                 </table>
               </div>

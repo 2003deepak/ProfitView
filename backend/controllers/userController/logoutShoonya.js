@@ -11,10 +11,10 @@ const logoutShoonya = async (req, res) => {
             return res.json({ status: "success", message: "Shoonya already logged out " });
         }
 
-        const jData = "";
+        // const jData = "";
 
         // try to log out from the API server of shoonya 
-        const response = await axios.post("https://api.shoonya.com/NorenWClientTP/Logout" , jData = {authparams});
+        // const response = await axios.post("https://api.shoonya.com/NorenWClientTP/Logout" , jData = {authparams});
         
 
     } catch (error) {

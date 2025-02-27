@@ -116,7 +116,7 @@ var NorenRestApi = function(params) {
             "imei": params.imei            
         };
 
-        console.log(authparams);
+        // console.log(authparams);
         let auth_data = post_request("authorize", authparams);
 
         auth_data

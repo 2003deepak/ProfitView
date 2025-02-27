@@ -5,6 +5,7 @@ import axios from 'axios';
 import useStockStore from '../store/stockStore';
 import themeStore from "../store/themeStore";
 import { ChevronDown, ChevronUp, Home, User, Settings, LogOut, Menu, Sun, Moon, TrendingUp } from 'lucide-react';
+import useAuthStore from '../store/authStore';
 
 const Sidebar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -12,6 +13,7 @@ const Sidebar = () => {
   const navigate = useNavigate();
 
   const { disconnectSSE } = useStockStore();
+  const {setLogOut} = useAuthStore();
   const { theme, changeTheme } = themeStore((state) => state);
 
   const toggleSidebar = () => {
@@ -31,7 +33,7 @@ const Sidebar = () => {
       if (response.data.status === 'success') {
         disconnectSSE();
         toast.success(response.data.message);
-        setTimeout(() => navigate('/login'), 2000);
+        setTimeout(()=> setLogOut() , 2000);
       }
     } catch (error) {
       console.error(error);

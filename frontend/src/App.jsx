@@ -12,7 +12,6 @@ import authStore from "./store/authStore"; // Zustand state for user authenticat
 import Portfolio from "./Pages/Portfolio";
 import V40Stocks from "./Pages/V40Stocks";
 import V40NextStocks from "./Pages/V40NextStocks";
-import Test from './Pages/test'
 
 function App() {
 
@@ -64,14 +63,6 @@ function App() {
           element={
             <ProtectedRoute>
               <V40NextStocks/>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/user/test"
-          element={
-            <ProtectedRoute>
-              <Test/>
             </ProtectedRoute>
           }
         />

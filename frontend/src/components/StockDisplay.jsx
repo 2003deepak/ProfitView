@@ -1,15 +1,13 @@
-import React from "react";
-import useStockStore from "../store/stockStore"; // ✅ Import Zustand stock store
-import themeStore from "../store/themeStore"; // ✅ Import theme store
+import React, { useEffect } from "react";
+import useStockStore from "../store/stockStore"; 
+import themeStore from "../store/themeStore"; 
 
 const StockDisplay = ({ stockName }) => {
   const { theme } = themeStore((state) => state);
-  const { stocks } = useStockStore(); // ✅ Only fetch stock data, don't connect again
-  const stockData = stocks[stockName] || { stockName, price: 0, percentageChange: 0 };
+  const { stocks } = useStockStore(); 
 
-  const { price = 0, percentageChange = 0 } = stockData;
-  const changeColor = percentageChange > 0 ? "text-green-400" : "text-red-400";
-
+ 
+  const changeColor = stocks[stockName]?.price > stocks[stockName]?.previousClosingPrice ? "text-green-400" : "text-red-400";
   return (
     <div
       className={`w-64 p-4 rounded-lg shadow-lg ${
@@ -22,11 +20,12 @@ const StockDisplay = ({ stockName }) => {
           <p className="text-sm text-gray-400">Live Stock Data</p>
         </div>
         <div className="text-right">
-          <p className="text-2xl font-semibold">Rs {price.toFixed(2)}</p>
+          <p className={`text-2xl font-semibold ${changeColor}`}>
+            Rs {stocks[stockName]?.price.toFixed(2)}
+          </p>
+
           <p className={`text-sm font-medium ${changeColor}`}>
-            {percentageChange > 0
-              ? `+${percentageChange.toFixed(2)}%`
-              : `${percentageChange.toFixed(2)}%`}
+            {stocks[stockName].percentageChange}
           </p>
         </div>
       </div>

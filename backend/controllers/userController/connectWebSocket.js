@@ -73,7 +73,12 @@ const STOCK_MAPPINGS = {
     '24225': 'Relaxo Footwears',
     '26000': 'Nifty 50',
     '26009': 'Nifty Bank',
-    '31181': 'Multi Commodity Exchange of India'
+    '31181': 'Multi Commodity Exchange of India',
+    '17869' : "JSW Energy",
+    '17903': "Abbott India",
+    '1576' : "Gillette India",
+
+
   }
     
 
@@ -98,13 +103,16 @@ function receiveQuote(data) {
         const stockId = data.tk.toString();
         const stockName = STOCK_MAPPINGS[stockId] || `Unknown Stock (${stockId})`;
 
+        // console.log(data);
+
         stockDataBuffer.set(stockId, {
             name: stockName,
             price: parseFloat(data.lp) || 0,
+            previousClosingPrice : parseFloat(data.c) || 0 ,
+            percentageChange : data.pc || 0 ,
             lastUpdated: Date.now()
         });
 
-        //console.log("Received Stock Quote:", stockDataBuffer);
     } catch (error) {
         console.error("Error processing stock quote:", error);
     }
@@ -136,7 +144,7 @@ function open(data, api) {
         'NSE|474',   'NSE|1196',  'NSE|2048',  'NSE|17364',
         'NSE|3906',  'NSE|3744',  'NSE|11654', 'NSE|17927',
         'NSE|5610',  'NSE|21501', 'NSE|12716', 'NSE|3411',
-        'NSE|10738', 'NSE|31181'
+        'NSE|10738', 'NSE|31181','NSE|17869','NSE|17903','NSE|1576' 
       ]
     api.subscribe(instruments.join("#"));
     console.log("Subscribing to:", instruments);
@@ -152,7 +160,7 @@ const connectWebSocket = async (req, res) => {
 
         api = new Api({});
         const login = await api.login(authparams);
-        //console.log(login);
+        // console.log(login);
 
         if (login.stat !== 'Ok') {
             api = null;
@@ -168,6 +176,7 @@ const connectWebSocket = async (req, res) => {
             'quote': (data) => receiveQuote(data),
             'order': (data) => receiveOrders(data),
         });
+
 
         return res.json({ status: "success", message: "Shoonya WebSocket connected successfully" });
 

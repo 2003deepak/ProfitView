@@ -12,12 +12,6 @@ const Dashboard = () => {
 
   const {stocks} = useStockStore((state) => state);
 
-  useEffect(() => {
-    console.log(stocks);
-  }, [stocks]);
-
- 
-
 
   return (
     <div
