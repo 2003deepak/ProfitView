@@ -1,122 +1,97 @@
 import React from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFacebook, faTwitter, faInstagram, faLinkedin } from '@fortawesome/free-brands-svg-icons'; // Social Media Icons
 import { Link } from 'react-router-dom';
+import { BarChart, Facebook, Twitter, Instagram, Mail, Phone } from 'lucide-react';
 import themeStore from '../store/themeStore';
 
 const Footer = () => {
-  // Theme Switcher (Got Values from themeStore (Zustand))
   const { theme } = themeStore((state) => state);
 
+  const isDark = theme === 'dark';
+
+  const bgColor = isDark ? 'bg-gray-800' : 'bg-[#f5f7fa]';
+  const textColor = isDark ? 'text-white' : 'text-black';
+  const sectionTitleColor = isDark ? 'text-white' : 'text-gray-800';
+  const mutedTextColor = isDark ? 'text-gray-400' : 'text-gray-600';
+  const hoverTextColor = isDark ? 'hover:text-white' : 'hover:text-black';
+  const borderColor = isDark ? 'border-t border-gray-700' : 'border-t border-gray-200';
+  const shadowStyle = isDark? 'shadow-[0_-2px_8px_rgba(255,255,255,0.05)]': 'shadow-[0_-4px_12px_rgba(0,0,0,0.05)]';
+
   return (
-    <footer
-      className={`w-full py-8 px-10 border-t transition-colors duration-300 ${
-        theme === 'dark'
-          ? 'bg-[#121212] border-gray-600 text-white'
-          : 'bg-white border-gray-200 text-black'
-      }`}
-    >
-      <div className="max-w-[85%] mx-auto flex flex-col md:flex-row justify-between items-center">
-        {/* Logo and Description */}
-        <div className="mb-6 md:mb-0">
-          <h1 className="text-2xl font-bold">TradingTick</h1>
-          <p
-            className={`mt-2 transition-colors ${
-              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-            }`}
-          >
-            Your trusted partner in trading insights.
-          </p>
-        </div>
+    
+    <footer className={`${bgColor} ${textColor} ${shadowStyle} border-t ${borderColor} transition-colors duration-300`}>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="mb-8 md:mb-0">
+            <div className="flex items-center mb-4">
+              <BarChart className="h-8 w-8 text-blue-400 mr-2" />
+              <h3 className="text-xl font-bold">Profit View</h3>
+            </div>
+            <p className={`${mutedTextColor} text-sm mb-4`}>
+              Your personal stock trading simulator for learning without financial risk.
+            </p>
+            <div className="flex space-x-4">
+              <a href="#" className={`${mutedTextColor} ${hoverTextColor} transition-colors`}>
+                <Facebook size={20} />
+              </a>
+              <a href="#" className={`${mutedTextColor} ${hoverTextColor} transition-colors`}>
+                <Twitter size={20} />
+              </a>
+              <a href="#" className={`${mutedTextColor} ${hoverTextColor} transition-colors`}>
+                <Instagram size={20} />
+              </a>
+            </div>
+          </div>
 
-        {/* Navigation Links */}
-        <div className="flex flex-wrap gap-6 justify-center md:justify-start">
-          <Link
-            to="/"
-            className={`transition-colors duration-300 ease-in-out ${
-              theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black'
-            }`}
-          >
-            Home
-          </Link>
-          <Link
-            to="/about"
-            className={`transition-colors duration-300 ease-in-out ${
-              theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black'
-            }`}
-          >
-            About
-          </Link>
-          <Link
-            to="/signup"
-            className={`transition-colors duration-300 ease-in-out ${
-              theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black'
-            }`}
-          >
-            Sign Up
-          </Link>
-          <Link
-            to="/login"
-            className={`transition-colors duration-300 ease-in-out ${
-              theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black'
-            }`}
-          >
-            Login
-          </Link>
-        </div>
+          <div>
+            <h3 className={`text-sm font-semibold ${sectionTitleColor} uppercase tracking-wider mb-4`}>Features</h3>
+            <ul className="space-y-2">
+              {['Stock Trading', 'Portfolio Tracking', 'Market Analysis', 'Learning Resources'].map((item) => (
+                <li key={item}>
+                  <a href="#" className={`${mutedTextColor} ${hoverTextColor} text-sm transition-colors`}>{item}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-        {/* Social Media Icons */}
-        <div className="flex gap-4 mt-6 md:mt-0">
-          <a
-            href="https://facebook.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`transition-colors duration-300 ease-in-out ${
-              theme === 'dark' ? 'text-gray-400 hover:text-[#6a4dfa]' : 'text-gray-600 hover:text-[#6a4dfa]'
-            }`}
-          >
-            <FontAwesomeIcon icon={faFacebook} size="lg" />
-          </a>
-          <a
-            href="https://twitter.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`transition-colors duration-300 ease-in-out ${
-              theme === 'dark' ? 'text-gray-400 hover:text-[#6a4dfa]' : 'text-gray-600 hover:text-[#6a4dfa]'
-            }`}
-          >
-            <FontAwesomeIcon icon={faTwitter} size="lg" />
-          </a>
-          <a
-            href="https://instagram.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`transition-colors duration-300 ease-in-out ${
-              theme === 'dark' ? 'text-gray-400 hover:text-[#6a4dfa]' : 'text-gray-600 hover:text-[#6a4dfa]'
-            }`}
-          >
-            <FontAwesomeIcon icon={faInstagram} size="lg" />
-          </a>
-          <a
-            href="https://linkedin.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`transition-colors duration-300 ease-in-out ${
-              theme === 'dark' ? 'text-gray-400 hover:text-[#6a4dfa]' : 'text-gray-600 hover:text-[#6a4dfa]'
-            }`}
-          >
-            <FontAwesomeIcon icon={faLinkedin} size="lg" />
-          </a>
+          <div>
+            <h3 className={`text-sm font-semibold ${sectionTitleColor} uppercase tracking-wider mb-4`}>Resources</h3>
+            <ul className="space-y-2">
+              {['Blog', 'Trading Guides', 'Tutorials', 'FAQ'].map((item) => (
+                <li key={item}>
+                  <a href="#" className={`${mutedTextColor} ${hoverTextColor} text-sm transition-colors`}>{item}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className={`text-sm font-semibold ${sectionTitleColor} uppercase tracking-wider mb-4`}>Contact</h3>
+            <ul className="space-y-2">
+              <li>
+                <a href="#" className={`${mutedTextColor} ${hoverTextColor} text-sm transition-colors flex items-center`}>
+                  <Mail size={16} className="mr-2" />
+                  support@profitview.com
+                </a>
+              </li>
+              <li>
+                <a href="#" className={`${mutedTextColor} ${hoverTextColor} text-sm transition-colors flex items-center`}>
+                  <Phone size={16} className="mr-2" />
+                  (123) 456-7890
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
 
-      {/* Footer Bottom Section */}
-      <div
-        className={`mt-8 pt-4 text-center transition-colors duration-300 ${
-          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-        }`}
-      >
-        © {new Date().getFullYear()} TradingTick. All rights reserved.
+      <div className={`${borderColor} py-6`}>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center">
+          <p className={`text-sm ${mutedTextColor}`}>&copy; 2025 Profit View. All rights reserved.</p>
+          <div className="mt-4 md:mt-0">
+            <Link to="#" className={`text-sm ${mutedTextColor} ${hoverTextColor} mr-4 transition-colors`}>Privacy Policy</Link>
+            <Link to="#" className={`text-sm ${mutedTextColor} ${hoverTextColor} transition-colors`}>Terms of Service</Link>
+          </div>
+        </div>
       </div>
     </footer>
   );

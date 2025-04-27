@@ -98,7 +98,7 @@ async function receiveQuote(data) {
         lastUpdated: Date.now()
     };
 
-    // console.log(`📥 Received quote for ${stockName}:`, priceData);
+    console.log(`📥 Received quote for ${stockName}:`, data);
 
     // Save live price to Redis
     await redisClient.set(`livePrice:${stockName}`, JSON.stringify(priceData));
@@ -108,7 +108,7 @@ async function receiveQuote(data) {
         ...priceData
     });
 
-   // console.log(`🟢 Updated price for ${stockName}:`, priceData);
+   //console.log(`🟢 Updated price for ${stockName}:`, priceData);
 }
 
 function receiveOrders(data) {
@@ -138,6 +138,7 @@ function openConnection(data, api) {
         'NSE|5610',  'NSE|21501', 'NSE|12716', 'NSE|3411',
         'NSE|10738', 'NSE|31181','NSE|17869','NSE|17903','NSE|1576' 
       ]
+      
     api.subscribe(instruments.join("#"));
     console.log("✅ Subscribed to instruments:", instruments.length);
 }

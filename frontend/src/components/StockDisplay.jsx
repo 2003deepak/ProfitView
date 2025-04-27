@@ -1,38 +1,45 @@
-import React, { useEffect } from "react";
-import useStockStore from "../store/stockStore"; 
+import React from "react";
+import { ArrowUp, ArrowDown } from "lucide-react";
+import { useNavigate } from "react-router";
 import themeStore from "../store/themeStore"; 
 
-const StockDisplay = ({ stockName }) => {
+const StockDisplay = ({ stockName, currentPrice, change, isPositive }) => {
   const { theme } = themeStore((state) => state);
-  const { stocks } = useStockStore(); 
+  const navigate = useNavigate();
+  
+  // Theme-based styles
+  const cardBg = theme === 'dark' ? 'bg-gray-700/50 hover:bg-gray-700' : 'bg-gray-50 hover:bg-gray-100';
+  const borderColor = theme === 'dark' ? 'border-gray-600' : 'border-gray-200';
+  const textColor = theme === 'dark' ? 'text-white' : 'text-gray-900';
+  const mutedTextColor = theme === 'dark' ? 'text-gray-400' : 'text-gray-500';
+  const indicatorBg = theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200';
+  
+  // Change colors
+  const changeColor = isPositive ? "text-green-500" : "text-red-500";
+  const ArrowIcon = isPositive ? ArrowUp : ArrowDown;
 
-  // useEffect(()=>{
-  //   console.log(stocks);
-  // },[stocks])
-
- 
-  const changeColor = stocks[stockName]?.price > stocks[stockName]?.previousClosingPrice ? "text-green-400" : "text-red-400";
-  // const changePercentage = stocks[stockName]?.percentageChange > 0 ? "text-green-400" : "text-red-400"
   return (
-    <div
-      className={`w-64 p-4 rounded-lg shadow-lg ${
-        theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-      }`}
-    >
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-lg font-bold">{stockName}</h2>
-          <p className="text-sm text-gray-400">Live Stock Data</p>
-        </div>
-        <div className="text-right">
-          <p className={`text-2xl font-semibold ${changeColor}`}>
-            Rs {stocks[stockName]?.price.toFixed(2)}
-          </p>
+    <div className={`p-4 rounded-lg transition-all duration-200 ${cardBg} border ${borderColor} shadow-xs`} 
+          onClick={ () => navigate(`/user/stock/${stockName}`)}>
 
-          {/* <p className={`text-sm font-medium ${changePercentage}`}>
-            {stocks[stockName].percentageChange}
-          </p> */}
+      <div className="flex items-center justify-between mb-2">
+        <p className={`text-sm font-medium ${mutedTextColor}`}>{stockName}</p>
+        <div className={`p-1 rounded-full ${indicatorBg}`}>
+          <ArrowIcon className="h-3 w-3 ${changeColor}" />
         </div>
+      </div>
+      
+      <p className={`text-2xl font-bold ${textColor} mb-1`}>
+        {currentPrice}
+      </p>
+      
+      <div className="flex items-center">
+        <span className={`text-sm font-medium ${changeColor}`}>
+          {change}
+        </span>
+        <span className={`text-xs ml-2 ${mutedTextColor}`}>
+          Today
+        </span>
       </div>
     </div>
   );

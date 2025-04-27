@@ -28,7 +28,7 @@ const login = async (req, res) => {
         connectWebSocket();
 
         // Generate JWT token
-        const token = generateToken(username, "User");
+        const token = generateToken(user._id , username, "User");
         res.cookie('token', token);
 
         return res.status(201).json({ 

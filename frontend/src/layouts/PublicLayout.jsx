@@ -7,7 +7,7 @@ const PublicLayout = () => {
   return (
     <div>
       <Header />
-      <Outlet /> {/* This is where your public route content will appear */}
+      <Outlet />
       <Footer />
     </div>
   );

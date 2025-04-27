@@ -25,10 +25,19 @@ const orderSchema = new mongoose.Schema({
         enum: ["BUY", "SELL"],
         required: true
     },
-    price: {
+    targetPrice: {
         type: Number,
         required: true,
         min: 0
+    },
+    executedPrice : {
+        type : Number , 
+        min : 0 , 
+        default : null  
+    },
+    isMarketOrder : {
+        type : Boolean , 
+        default : false 
     },
     status: {
         type: String,

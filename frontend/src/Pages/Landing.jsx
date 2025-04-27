@@ -1,6 +1,12 @@
 import React,{useEffect} from 'react'
 import themeStore from '../store/themeStore';
 import authStore from '../store/authStore';
+import HeroSection from '../components/HeroSection';
+import FeatureSection from '../components/FeatureSection';
+import CTASection from '../components/CTASection';
+import PricingSection from '../components/PricingSection';
+import TestimonialSection from '../components/TestimonialSection';
+import FAQSection from '../components/FAQSection';
 
 const Landing = () => {
 
@@ -10,20 +16,22 @@ const Landing = () => {
 
 
   return (
-    <div className={`w-full h-[80vh] flex justify-center items-center ${
-        theme === 'dark'
-          ? 'bg-[#121212] border-gray-600 text-white'
-          : 'bg-white border-gray-200 text-black'
-      }`}>
-        
-        
-     <h1 className={`text-4xl font-bold ${
-        theme === 'dark' ? 'text-gray-400 hover:text-[#6a4dfa]' : 'text-gray-600 hover:text-[#6a4dfa]'
-        }`}>
-        Welcome to ProfitView {isLoggedIn ? "True" : "False"}
-        </h1>
 
-    </div>
+    <>
+
+        <HeroSection />
+        <FeatureSection />
+        <PricingSection/>
+        <TestimonialSection/>
+        <CTASection />
+        <FAQSection/>
+    
+    
+    
+    </>
+
+       
+    
   )
 }
 

@@ -1,26 +1,25 @@
-// placeOrder.js
-
 const userModel = require("../../models/user");
 const orderModel = require("../../models/order");
+const holdingModel = require("../../models/holding");
 const orderQueue = require("../../config/bullMq");
 const redisClient = require("../../config/redis");
 
 const placeOrder = async (req, res) => {
     try {
-        const { stockName, action, quantity, targetPrice } = req.body;
+        const { stockName, action, quantity, targetPrice , isMarketOrder} = req.body;
 
         console.log("🟡 Placing order for:", stockName, action, quantity, targetPrice);
 
         const parsedQuantity = parseInt(quantity, 10);
         const parsedTargetPrice = parseFloat(targetPrice);
 
-        // Validate user
+        // ✅ Validate user
         const user = await userModel.findOne({ username: req.user.username });
         if (!user) {
             return res.status(400).json({ status: "fail", message: "User not found" });
         }
 
-        // Validate inputs
+        // ✅ Validate inputs
         if (!["BUY", "SELL"].includes(action)) {
             return res.status(400).json({ status: "fail", message: "Invalid order type" });
         }
@@ -29,16 +28,22 @@ const placeOrder = async (req, res) => {
             return res.status(400).json({ status: "fail", message: "Invalid quantity" });
         }
 
-        if (isNaN(parsedTargetPrice) || parsedTargetPrice <= 0) {
+        
+
+        if (!isMarketOrder && isNaN(parsedTargetPrice) || parsedTargetPrice <= 0) {
             return res.status(400).json({ status: "fail", message: "Invalid target price" });
         }
 
-        // Fetch live price from Redis
+        // ✅ Fetch live price from Redis
         const liveDataStr = await redisClient.get(`livePrice:${stockName}`);
         if (!liveDataStr) {
-            return res.status(400).json({ status: "fail", message: "Live stock price not available yet. Please try again in a moment." });
+            return res.status(400).json({
+                status: "fail",
+                message: "Live stock price not available yet. Please try again in a moment."
+            });
         }
 
+       
         const liveData = JSON.parse(liveDataStr);
         const livePrice = liveData.price;
 
@@ -48,25 +53,51 @@ const placeOrder = async (req, res) => {
             return res.status(400).json({ status: "fail", message: "Invalid live stock price" });
         }
 
-        const totalCost = parsedQuantity * parsedTargetPrice;
+        const totalCost = isMarketOrder ? parsedQuantity * livePrice : parsedQuantity * parsedTargetPrice;
 
-        // Check user balance for BUY
-        if (action === "BUY" && user.balance < totalCost) {
-            return res.status(400).json({ status: "fail", message: "Insufficient balance" });
+        if (action === "BUY") {
+            // ✅ BUY: Check user balance
+            if (user.balance < totalCost) {
+                return res.status(400).json({
+                    status: "fail",
+                    message: "Insufficient balance to place BUY order"
+                });
+            }
+
+            user.balance -= totalCost;
+            user.reservedAmount += totalCost;
+        } else if (action === "SELL") {
+            // ✅ SELL: Check holdings
+            const holding = await holdingModel.findOne({ user: user._id });
+            if (!holding) {
+                return res.status(400).json({ status: "fail", message: "You don't have any holdings yet" });
+            }
+
+            const stockHolding = holding.holdings.find(h => h.stock_symbol === stockName.toUpperCase());
+            if (!stockHolding || stockHolding.quantity < parsedQuantity) {
+                return res.status(400).json({
+                    status: "fail",
+                    message: `Not enough shares of ${stockName} to SELL. You have ${stockHolding ? stockHolding.quantity : 0}`
+                });
+            }
+
         }
 
-        // Create order
+        // ✅ Create order
         const order = await orderModel.create({
             user: user._id,
             stockName,
             quantity: parsedQuantity,
             action,
-            price: parsedTargetPrice,
+            targetPrice: isMarketOrder ? livePrice : parsedTargetPrice,
+            isMarketOrder : isMarketOrder ? true : false ,
             status: "OPEN"
         });
 
-        // Save user & push to queue
-        await user.save();
+        // ✅ Save user (only needed for BUY as SELL didn't modify balance)
+        if (action === "BUY") await user.save();
+
+        // ✅ Push to queue
         await redisClient.lpush("pendingOrders", order._id.toString());
         await orderQueue.add("processOrder", { orderId: order._id });
 
@@ -74,7 +105,7 @@ const placeOrder = async (req, res) => {
 
         return res.status(201).json({
             status: "success",
-            message: "Order placed successfully, processing in queue",
+            message: "Order placed successfully and is now in queue for execution.",
             order
         });
 

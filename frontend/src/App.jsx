@@ -12,6 +12,7 @@ import authStore from "./store/authStore"; // Zustand state for user authenticat
 import Portfolio from "./Pages/Portfolio";
 import V40Stocks from "./Pages/V40Stocks";
 import V40NextStocks from "./Pages/V40NextStocks";
+import StockDetail from "./Pages/StockDetail";
 
 function App() {
 
@@ -63,6 +64,15 @@ function App() {
           element={
             <ProtectedRoute>
               <V40NextStocks/>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/user/stock/:symbol"
+          element={
+            <ProtectedRoute>
+              <StockDetail/>
             </ProtectedRoute>
           }
         />
