@@ -3,109 +3,108 @@ let web_socket = require("ws");
 let triggers = {
      "open": [],
      "quote": [],
-     "order" : []
-
+     "order": [],
+     "error": [],
+     "close": []
 };
 
 let { API } = require("./config");
-
 
 let WebSocketClient = function (cred, params) {
      let self = this;
 
      let ws = null,
-          apikey = cred.apikey;
-          
-     let url = cred.url;   
-
-     let timeout = API.heartbeat || 3000;   
+         apikey = cred.apikey,
+         url = cred.url,
+         timeout = API.heartbeat || 3000;
 
      this.connect = function (params, callbacks) {
           return new Promise((resolve, reject) => {
-               if (apikey === null || url === null ) return "apikey or url is missing";
-               console.log(url);
+               if (!apikey || !url) return reject("apikey or url is missing");
 
-               //callbacks to the app are set here
                this.set_callbacks(callbacks);
 
-               ws = new web_socket(url,[], { rejectUnauthorized: false });
+               ws = new web_socket(url, [], { rejectUnauthorized: false });
 
-               ws.onopen = function onOpen(evt) {
-                    setInterval(function () {
-                         var _hb_req = '{"t":"h"}';
-                         ws.send(_hb_req);
+               ws.onopen = function () {
+                    // Heartbeat ping
+                    setInterval(() => {
+                         ws.send('{"t":"h"}');
                     }, timeout);
 
-                    //prepare the data
-                    let values  = { "t": "c" };
-                    values["uid"]       = params.uid;
-                    values["actid"]     = params.actid;
-                    values["susertoken"] = params.apikey;
-                    values["source"]    = "API";  
-                    //console.log(JSON.stringify(values));  
-                    ws.send(JSON.stringify(values));            
-                    resolve()
-
+                    // Send connection auth message
+                    let values = {
+                         "t": "c",
+                         "uid": params.uid,
+                         "actid": params.actid,
+                         "susertoken": params.apikey,
+                         "source": "API"
+                    };
+                    ws.send(JSON.stringify(values));
+                    resolve();
                };
+
                ws.onmessage = function (evt) {
-                    
-                    var result = JSON.parse(evt.data);     
-                    //console.log(result);
+                    try {
+                         let result = JSON.parse(evt.data);
 
-                    if(result.t == 'ck')
-                    {
-                         trigger("open", [result]);
+                         switch (result.t) {
+                              case 'ck':
+                                   trigger("open", [result]);
+                                   break;
+
+                              case 'tk':
+                              case 'tf':
+                              case 'dk':
+                              case 'df':
+                                   // Send only if full quote data is present
+                                   if (result.lp) {
+                                        trigger("quote", [result]);
+                                   } 
+                                   break;
+
+                              case 'om':
+                                   trigger("order", [result]);
+                                   break;
+
+                              default:
+                                   console.debug("📭 Unknown message type received:", result);
+                                   break;
+                         }
+
+                    } catch (err) {
+                         console.error("❌ WebSocket parse error:", err);
                     }
-                    if( result.t == 'tk' || result.t == 'tf')
-                    {
-                         trigger("quote", [result]);
-                    }
-                    if( result.t == 'dk' || result.t == 'df')
-                    {
-                         trigger("quote", [result]);
-                    }
-                    if(result.t == 'om')
-                    {
-                         trigger("order", [result]);
-                    }
-                    
                };
+
                ws.onerror = function (evt) {
-                    console.log("error::", evt)
+                    console.log("WebSocket error:", evt);
                     trigger("error", [JSON.stringify(evt.data)]);
-                    self.connect();
-                    reject(evt)
+                    self.connect();  // Optional: auto-reconnect
+                    reject(evt);
                };
+
                ws.onclose = function (evt) {
-                    console.log("Socket closed")
+                    console.log("🔌 WebSocket closed");
                     trigger("close", [JSON.stringify(evt.data)]);
                };
-          })
-     }
+          });
+     };
+
      this.set_callbacks = function (callbacks) {
-          if(callbacks.socket_open !== undefined)
-          { 
-              this.on('open', callbacks.socket_open);              
+          if (callbacks.socket_open) this.on('open', callbacks.socket_open);
+          if (callbacks.socket_close) this.on('close', callbacks.socket_close);
+          if (callbacks.socket_error) this.on('error', callbacks.socket_error);
+          if (callbacks.quote) this.on('quote', callbacks.quote);
+          if (callbacks.order) this.on('order', callbacks.order);
+     };
+
+     this.send = function (data) {
+          if (ws && ws.readyState === 1) {
+               ws.send(data);
+          } else {
+               console.warn("🔴 WebSocket is not open. Message not sent.");
           }
-          if(callbacks.socket_close !== undefined)
-          { 
-              this.on('close', callbacks.socket_close);              
-          }
-          if(callbacks.socket_error !== undefined)
-          { 
-              this.on('error', callbacks.socket_error);              
-          }
-          if(callbacks.quote !== undefined)
-          {
-               this.on('quote', callbacks.quote);               
-          }
-          if(callbacks.order !== undefined)
-          {
-               this.on('order', callbacks.order);              
-          }
-     }
-     this.send = function (data) {         
-          ws.send(data);                  
      };
 
      this.on = function (e, callback) {
@@ -114,18 +113,16 @@ let WebSocketClient = function (cred, params) {
           }
      };
 
-
      this.close = function () {
-          ws.close()
-     }
-}
+          if (ws) ws.close();
+     };
+};
 
-
-// trigger event callbacks
+// Trigger event callbacks
 function trigger(e, args) {
-     if (!triggers[e]) return
-     for (var n = 0; n < triggers[e].length; n++) {
-          triggers[e][n].apply(triggers[e][n], args ? args : []);
+     if (!triggers[e]) return;
+     for (let i = 0; i < triggers[e].length; i++) {
+          triggers[e][i].apply(triggers[e][i], args || []);
      }
 }
 

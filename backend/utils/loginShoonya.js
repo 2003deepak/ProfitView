@@ -12,11 +12,10 @@ const loginShoonya = async () => {
 
         api = new Api({});
         const login = await api.login(authparams);
-        await console.log(login);
 
-        if (login.stat !== 'Ok') {
+        if (!login || login.stat !== 'Ok') {   
             api = null;
-            console.error("Shoonya Login Failed:", login);
+            console.error("Shoonya Login Failed:", login || "No response received");
             return { status: "fail", message: "Shoonya API Login Failed" };
         }
 

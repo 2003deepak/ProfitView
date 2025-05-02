@@ -1,9 +1,24 @@
 const holdingModel = require("../../models/holding");
+const redisClient = require("../../config/redis"); 
 
 const getHolding = async (req, res) => {
     try {
-        // Make sure to use await
-        const user = await holdingModel.findOne({ user: req.user._id });
+        const userId = req.user._id.toString();
+        
+        console.log("User ID:", userId);
+        // Try to get holdings from Redis cache
+        const cachedHoldings = await redisClient.get(`holding:${userId}`);
+
+        if (cachedHoldings) {
+            return res.status(200).json({
+                status: "success",
+                message: "Fetched Holding Successfully (from cache)",
+                data: JSON.parse(cachedHoldings),
+            });
+        }
+
+        // If not found in cache, query from database
+        const user = await holdingModel.findOne({ user: userId });
 
         if (!user) {
             return res.status(404).json({
@@ -12,15 +27,28 @@ const getHolding = async (req, res) => {
             });
         }
 
-        return res.status(201).json({ 
-            status: 'success', 
-            message: 'Fetched Holding Successfully', 
-            data : user.holdings
+        const userData = {
+            holdings: user.holdings,
+            totalInvestment: user.totalInvestment,
+          };
+          
+        // Store the object in Redis
+        await redisClient.set(`holding:${userId}`, JSON.stringify(userData));
+
+      
+
+        return res.status(201).json({
+            status: "success",
+            message: "Fetched Holding Successfully ( From DB )",
+            data: user.holdings,
         });
 
     } catch (error) {
         console.error("Error fetching holdings:", error);
-        return res.status(500).json({ status: 'fail', message: 'Holdings Error from getHolding API' });
+        return res.status(500).json({
+            status: 'fail',
+            message: 'Holdings Error from getHolding API'
+        });
     }
 };
 

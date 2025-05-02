@@ -73,7 +73,7 @@ const placeOrder = async (req, res) => {
                 return res.status(400).json({ status: "fail", message: "You don't have any holdings yet" });
             }
 
-            const stockHolding = holding.holdings.find(h => h.stock_symbol === stockName.toUpperCase());
+            const stockHolding = holding.holdings.find(h => h.stock_name === stockName);
             if (!stockHolding || stockHolding.quantity < parsedQuantity) {
                 return res.status(400).json({
                     status: "fail",

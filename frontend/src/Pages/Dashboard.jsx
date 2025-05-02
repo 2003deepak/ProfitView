@@ -2,10 +2,12 @@ import { React, useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import TopSearchBar from "../components/TopSearchBar";
 import themeStore from "../store/themeStore";
-import PortfolioChart from "../components/PortfolioChart";
 import WatchlistModal from "../components/WatchlistModal.jsx";
 import { Link } from 'react-router-dom';
+import PortfolioChart from "../components/PortfolioChart";
+import DashboardHeader from "../components/DashboardHeader";
 import useStockStore from "../store/stockStore";
+import useUserStore from "../store/userStore.js";
 import {
   ArrowDown,
   ArrowUp,
@@ -23,9 +25,11 @@ import {
   TrendingUp,
 } from "lucide-react";
 import StockDisplay from "../components/StockDisplay.jsx";
+import StockChart from "@/components/StockChart";
 
 const Dashboard = () => {
-  const { theme } = themeStore((state) => state);
+  const { theme, setTheme } = themeStore((state) => state);
+  const { totalInvestment, portfolioPerformance } = useUserStore((state) => state);
 
   const [activeTab, setActiveTab] = useState("overview");
   const [showWatchlistModal, setShowWatchlistModal] = useState(false);
@@ -90,14 +94,11 @@ const Dashboard = () => {
   const [portfolioValue, setPortfolioValue] = useState(15782.45);
   const [portfolioChange, setPortfolioChange] = useState(342.18);
   const [portfolioChangePercent, setPortfolioChangePercent] = useState(2.22);
-  const [marketStatus, setMarketStatus] = useState("open"); // 'open', 'closed', 'pre', 'after'
 
-  const {stocks } = useStockStore((state) => state);
+  const { stocks } = useStockStore((state) => state);
 
   useEffect(() => {
-
     console.log(stocks);
-  
   }, [stocks])
 
   const marketIndices = [
@@ -231,75 +232,28 @@ const Dashboard = () => {
       <Sidebar />
 
       <div className="flex flex-col flex-1 md:ml-44 transition-all duration-300">
-
         <TopSearchBar />
 
         <main className={`flex-1 p-4 md:p-6 overflow-auto ${textColor}`}>
-
           <div className="container mx-auto flex flex-col gap-4">
 
-           
+            <DashboardHeader PageTitle = "Dashboard" Message = "Welcome back, John! Here's what's happening with your portfolio today." />
 
-            {/* Page Header Section */}
-            <div className="mb-6 md:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <h1 className="text-2xl font-bold">Dashboard</h1>
-                <p className={`${mutedTextColor}`}>
-                  Welcome back, John! Here's what's happening with your portfolio today.
-                </p>
-              </div>
-
-              {/* Header right side with market status and buttons */}
-              <div className="flex items-center gap-4">
-                {/* Market status indicator */}
-                <div
-                  className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-                    marketStatus === "open"
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                      : marketStatus === "closed"
-                      ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                      : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                  }`}
-                >
-                  <Clock className="h-4 w-4" />
-                  <span className="text-sm font-medium">
-                    Market {marketStatus === "open" ? "Open" : marketStatus === "closed" ? "Closed" : "Pre-market"}
-                  </span>
-                </div>
-
-                {/* Notification and settings buttons */}
-                <button 
-                  className={`p-2 rounded-full ${borderColor} border ${hoverBgColor}`}
-                  onClick={() => alert("Notifications")}
-                >
-                  <Bell className="h-5 w-5" />
-                </button>
-
-                <button
-                  className={`p-2 rounded-full ${borderColor} border ${hoverBgColor}`}
-                  onClick={() => toggleTheme()}
-                >
-                  <Settings className="h-5 w-5" />
-                </button>
+            {/* Market Indices Section */}
+            <div className={`rounded-xl shadow-sm pt-2 pb-6`}>
+              <h2 className="text-xl font-semibold mb-4 px-4">Market Indices</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 ">
+                {marketIndices.map((index, i) => (
+                  <StockDisplay 
+                    key={i}
+                    stockName={index.name}
+                    currentPrice={index.value}
+                    change={index.change}
+                    isPositive={index.isPositive}
+                  />
+                ))}
               </div>
             </div>
-
-             {/* Market Indices Section */}
-              <div className={`rounded-xl shadow-sm pt-2 pb-6`}>
-                <h2 className="text-xl font-semibold mb-4 px-4">Market Indices</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 ">
-                  {marketIndices.map((index, i) => (
-                    <StockDisplay 
-                      key={i}
-                      stockName={index.name}
-                      currentPrice={index.value}
-                      change={index.change}
-                      isPositive={index.isPositive}
-                    />
-                  ))}
-                </div>
-
-              </div>
 
             {/* Main content grid - responsive columns */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -312,19 +266,19 @@ const Dashboard = () => {
                       <h2 className={`text-lg font-medium ${mutedTextColor}`}>Portfolio Value</h2>
                       <div className="flex items-baseline gap-2 mt-1">
                         <span className="text-3xl font-bold">
-                          ${portfolioValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          Rs {totalInvestment.toLocaleString("en-US")}
                         </span>
                         <span
                           className={`flex items-center ${
-                            portfolioChange >= 0 ? "text-green-500" : "text-red-500"
+                            portfolioPerformance >= 0 ? "text-green-500" : "text-red-500"
                           } text-lg`}
                         >
-                          {portfolioChange >= 0 ? (
+                          {portfolioPerformance >= 0 ? (
                             <ArrowUp className="h-4 w-4 mr-1" />
                           ) : (
                             <ArrowDown className="h-4 w-4 mr-1" />
                           )}
-                          ${Math.abs(portfolioChange).toFixed(2)} ({portfolioChangePercent.toFixed(2)}%)
+                          {portfolioPerformance}
                         </span>
                       </div>
                     </div>
@@ -342,12 +296,15 @@ const Dashboard = () => {
                         Withdraw
                       </button>
                     </div>
+
                   </div>
 
-                  {/* Portfolio chart */}
-                  <div className="h-[250px]">
+                   {/* Portfolio chart */}
+                  <div className="h-[450px]">
                     <PortfolioChart theme={theme} />
                   </div>
+
+                  
                 </div>
 
                 {/* Recent activity card */}
@@ -579,8 +536,6 @@ const Dashboard = () => {
                     </button>
                   </div>
                 </div>
-
-                {/* Market indices card (optional - can be added here) */}
               </div>
             </div>
 
@@ -594,11 +549,8 @@ const Dashboard = () => {
             )}
           </div>
         </main>
-
-        
-
-        
       </div>
+
     </div>
   );
 };

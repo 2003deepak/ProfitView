@@ -3,24 +3,15 @@ import Sidebar from "../components/Sidebar";
 import TopSearchBar from "../components/TopSearchBar";
 import themeStore from "../store/themeStore";
 import useStockStore from "../store/stockStore.js";
+import DashboardHeader from "../components/DashboardHeader";
 import { useNavigate } from "react-router";
 import {
   ArrowDown,
   ArrowUp,
-  Bell,
-  ChevronDown,
   ChevronRight,
-  Clock,
-  Edit,
-  LineChart,
-  Plus,
   Search,
-  Settings,
   Star,
-  Trash2,
-  TrendingUp,
-  Sun,
-  Moon,
+
 } from "lucide-react";
 import StockDisplay from "../components/StockDisplay.jsx";
 
@@ -142,49 +133,9 @@ const V40NextStocks = () => {
 
         <main className={`flex-1 p-4 md:p-6 overflow-auto ${textColor}`}>
           <div className="container mx-auto flex flex-col gap-4">
-            {/* Page Header Section */}
-            <div className="mb-6 md:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <h1 className="text-2xl font-bold">V40 Stocks</h1>
-                <p className={`${mutedTextColor}`}>
-                  Comprehensive view of the V40 stock portfolio
-                </p>
-              </div>
-
-              {/* Header right side with market status and buttons */}
-              <div className="flex items-center gap-4">
-                {/* Market status indicator */}
-                <div
-                  className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-                    marketStatus === "open"
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                      : marketStatus === "closed"
-                      ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                      : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                  }`}
-                >
-                  <Clock className="h-4 w-4" />
-                  <span className="text-sm font-medium">
-                    Market {marketStatus === "open" ? "Open" : marketStatus === "closed" ? "Closed" : "Pre-market"}
-                  </span>
-                </div>
-
-                {/* Notification and settings buttons */}
-                <button 
-                  className={`p-2 rounded-full ${borderColor} border ${hoverBgColor}`}
-                  onClick={() => alert("Notifications")}
-                >
-                  <Bell className="h-5 w-5" />
-                </button>
-
-                <button
-                  className={`p-2 rounded-full ${borderColor} border ${hoverBgColor}`}
-                  onClick={toggleTheme}
-                >
-                  {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                </button>
-              </div>
-            </div>
+           
+            {/* Page Header */}
+            <DashboardHeader PageTitle = "V40 Next Stocks" Message = "Comprehensive view of the V40 Next stock portfolio" />
 
             {/* Market Indices Section */}
             <div className={`rounded-xl shadow-sm pt-2 pb-6`}>
@@ -219,12 +170,7 @@ const V40NextStocks = () => {
                         className={`pl-10 pr-4 py-2 rounded-lg ${cardSecondaryBg} ${textColor} border ${borderColor} focus:outline-none focus:ring-2 focus:ring-blue-500`}
                       />
                     </div>
-                    <button className={`p-2 rounded-lg ${cardSecondaryBg} ${hoverBgColor}`}>
-                      <TrendingUp className="h-5 w-5" />
-                    </button>
-                    <button className={`p-2 rounded-lg ${cardSecondaryBg} ${hoverBgColor}`}>
-                      <LineChart className="h-5 w-5" />
-                    </button>
+                    
                   </div>
                 </div>
                 
@@ -287,7 +233,7 @@ const V40NextStocks = () => {
                                   <button
                                     className={`p-2 rounded-lg ${cardSecondaryBg} ${hoverBgColor} text-green-600 dark:text-green-400`}
                                     title="View details"
-                                    onClick={()=> navigate (`/user/stock/${stock.symbol}`)}
+                                    onClick={()=> navigate (`/user/stock/${stock.name}`)}
                                   >
                                     <ChevronRight className="h-4 w-4" />
                                   </button>

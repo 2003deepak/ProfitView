@@ -442,29 +442,47 @@ var NorenRestApi = function(params) {
          * @param no params
          */
     self.start_websocket = function (callbacks) {
-
-        
-        let web_socket = new WS({'url' : API.websocket, 'apikey' : self.__susertoken});
-        
-        self.web_socket = web_socket;
-        let params = {
-          'uid' : self.__username,
-          'actid' : self.__username,
-          'apikey' : self.__susertoken,
-        }
-        
-        web_socket.connect(params, callbacks)
-          .then(() => {            
-                console.log('ws is connected');
-            }); 
-     };
-
-    self.subscribe = function (instrument, feedtype) {
-          let values = {};
-          values['t'] =  't';
-          values['k'] = instrument
-          self.web_socket.send(JSON.stringify(values));         
-    }
+      let web_socket = new WS({
+          url: API.websocket,
+          apikey: self.__susertoken
+      });
+  
+      self.web_socket = web_socket;
+  
+      const params = {
+          uid: self.__username,
+          actid: self.__username,
+          apikey: self.__susertoken
+      };
+  
+      web_socket.connect(params, callbacks)
+          .then(() => {
+              console.log('✅ WebSocket connected');
+          })
+          .catch((err) => {
+              console.error("❌ WebSocket connection failed:", err);
+          });
+  };
+  
+  self.subscribe = function (instrument, feedtype = 'full') {
+      if (!instrument) {
+          console.warn("⚠️ No instrument provided to subscribe.");
+          return;
+      }
+  
+      const values = {
+          t: feedtype === 'full' ? 't' : 'tf',  // 't' for full tick, 'tf' for compact
+          k: instrument
+      };
+  
+      try {
+          self.web_socket.send(JSON.stringify(values));
+          console.log(`📡 Subscribed to ${instrument} with feedtype ${values.t}`);
+      } catch (err) {
+          console.error(`❌ Failed to subscribe to ${instrument}:`, err);
+      }
+  };
+  
 
     
 }

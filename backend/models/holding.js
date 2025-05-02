@@ -9,10 +9,9 @@ const holdingSchema = new mongoose.Schema({
   },
   holdings: [
     {
-      stock_symbol: {
+      stock_name: {
         type: String,
         required: true,
-        uppercase: true,
         trim: true
       },
       quantity: {

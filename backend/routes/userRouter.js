@@ -8,7 +8,9 @@ const isLoggedIn = require("../utils/isLoggedIn")
 const placeOrder = require("../controllers/userController/placeOrder");
 const { logoutShoonya } = require('../utils/logoutShoonya');
 const getHolding = require('../controllers/userController/getHolding');
-const subscribeStock = require("../controllers/userController/subscribeStock")
+const subscribeStock = require("../controllers/userController/subscribeStock");
+const getUserData = require('../controllers/userController/getUserData');
+const updateUserDetails = require('../controllers/userController/updateUserDetails');
 
 
 
@@ -18,6 +20,8 @@ router.post('/placeOrder' , isLoggedIn ,placeOrder);
 router.post('/logoutShoonya' , isLoggedIn ,logoutShoonya);
 router.post('/subscribeStock/:stockName' , isLoggedIn , subscribeStock);
 router.get('/getHolding',isLoggedIn,getHolding);
+router.get('/getUserData',isLoggedIn,getUserData);
+router.put('/updateUser',isLoggedIn,updateUserDetails)
 
 
 

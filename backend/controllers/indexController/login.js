@@ -1,8 +1,11 @@
+require("dotenv").config(); 
 const bcrypt = require('bcrypt');
 const userModel = require('../../models/user');
 const { generateToken } = require('../../utils/generateToken');
 const { loginShoonya } = require('../../utils/loginShoonya');
 const { connectWebSocket } = require('../../utils/connectWebSocket');
+
+const SIMULATION_MODE = process.env.SIMULATION_MODE === 'true';
 
 const login = async (req, res) => {
     const { username, password } = req.body;
@@ -18,11 +21,16 @@ const login = async (req, res) => {
             return res.status(400).json({ status: 'fail', message: 'Invalid Username or Password' });
         }
 
-        // Login to Shoonya
-        const shoonyaLogin = await loginShoonya();
-        if (shoonyaLogin.status !== 'success') {
-            return res.status(500).json({ status: 'fail', message: 'Shoonya login failed' });
+        if(!SIMULATION_MODE){
+
+            // Login to Shoonya
+            const shoonyaLogin = await loginShoonya();
+            if (shoonyaLogin.status !== 'success') {
+                return res.status(500).json({ status: 'fail', message: 'Shoonya login failed' });
+            }
+
         }
+        
 
         // Start WebSocket immediately after successful Shoonya login
         connectWebSocket();

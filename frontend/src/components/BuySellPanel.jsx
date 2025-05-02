@@ -5,6 +5,9 @@ import axios from 'axios';
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from 'react-toastify';  // Import toast and ToastContainer
 import 'react-toastify/dist/ReactToastify.css'; // Import the CSS for toast
+import useUserStore from "../store/userStore";
+
+import { set } from "date-fns";
 
 export default function BuySellPanel({ stockName, theme }) {
   const [activeTab, setActiveTab] = useState("buy");
@@ -14,7 +17,9 @@ export default function BuySellPanel({ stockName, theme }) {
   const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { stocks } = useStockStore();
+  const { holdings , balance } = useUserStore();
   const [error, setError] = useState("");
+  const [currentHoldingQuantity, setCurrentHoldingQuantity] = useState(0);
   const [confirmation, setConfirmation] = useState("");
   const navigate = useNavigate();
 
@@ -31,6 +36,23 @@ export default function BuySellPanel({ stockName, theme }) {
   const primaryBg = theme === "dark" ? "bg-blue-600" : "bg-blue-500";
   const primaryHover = theme === "dark" ? "hover:bg-blue-500" : "hover:bg-blue-600";
 
+  // Fetch current holding quantity when the component mounts
+  useEffect(() => {
+    if (activeTab === "sell") {
+      getStockQuantity(stockName);
+    }
+  }, [activeTab, stockName, holdings]);
+
+
+
+  // Function to get stock quantity
+  const getStockQuantity = (stockName) => {
+    const stock = holdings.filter((stock) => stock.stock_name === stockName);
+
+    stock.length === 0 ? setCurrentHoldingQuantity(0) : setCurrentHoldingQuantity(stock[0].quantity)
+
+  }
+
   // Calculate total cost
   const totalCost = orderType === "market"
     ? (currentPrice * quantity)
@@ -39,31 +61,27 @@ export default function BuySellPanel({ stockName, theme }) {
   // Validate inputs and enable/disable submit button
   useEffect(() => {
     let isValid = true;
-
-    // Quantity must be > 0
+  
     if (quantity <= 0 || isNaN(quantity)) {
       isValid = false;
     }
-
+  
     if (activeTab === "buy") {
-      // For buy orders
       if (orderType === "limit") {
-        // Limit price must be > 10% of current price
-        const minLimitPrice = currentPrice * 1.1;
-        if (limitPrice <= minLimitPrice || isNaN(limitPrice)) {
+        const minLimitPrice = currentPrice * 0.9;
+        if (limitPrice < minLimitPrice || isNaN(limitPrice)) {
           isValid = false;
         }
       }
     } else {
-      // For sell orders - quantity must not exceed available shares
-      // Note: You might want to get available shares from API instead of local state
-      if (quantity > (stocks[stockName]?.ownedShares || 0)) {
+      if (quantity > (currentHoldingQuantity || 0)) {
         isValid = false;
       }
     }
-
+  
     setIsSubmitDisabled(!isValid);
-  }, [quantity, limitPrice, orderType, activeTab, totalCost, currentPrice, stocks, stockName]);
+  }, [quantity, limitPrice, orderType, activeTab, currentPrice, stocks, stockName]);
+  
 
   // Handle quantity change
   const handleQuantityChange = (e) => {
@@ -201,7 +219,7 @@ export default function BuySellPanel({ stockName, theme }) {
                 {activeTab === "buy" ? (
                   `Max: ${currentPrice ? Math.floor(100000 / currentPrice) : 0} shares`
                 ) : (
-                  `Available: ${stocks[stockName]?.ownedShares || 0} shares`
+                  `Available: ${currentHoldingQuantity} shares`
                 )}
               </span>
             </div>
@@ -241,7 +259,7 @@ export default function BuySellPanel({ stockName, theme }) {
               </div>
               {activeTab === "buy" && orderType === "limit" && currentPrice && (
                 <p className={`text-xs mt-1 ${mutedTextColor}`}>
-                  Must be greater than ₹{(currentPrice * 1.1).toFixed(2)}
+                  Must be greater than ₹{(currentPrice * 0.9).toFixed(2)}
                 </p>
               )}
             </div>

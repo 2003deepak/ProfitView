@@ -13,6 +13,8 @@ import Portfolio from "./Pages/Portfolio";
 import V40Stocks from "./Pages/V40Stocks";
 import V40NextStocks from "./Pages/V40NextStocks";
 import StockDetail from "./Pages/StockDetail";
+import Profile from "./Pages/Profile";
+import Settings from "./Pages/Settings";
 
 function App() {
 
@@ -73,6 +75,24 @@ function App() {
           element={
             <ProtectedRoute>
               <StockDetail/>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/user/profile"
+          element={
+            <ProtectedRoute>
+              <Profile/>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/user/settings"
+          element={
+            <ProtectedRoute>
+              <Settings/>
             </ProtectedRoute>
           }
         />

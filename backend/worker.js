@@ -6,12 +6,32 @@ const userModel = require("./models/user");
 const holdingModel = require("./models/holding");
 const db = require("./config/mongoose-connection");
 
+function isMarketOpen() {
+
+    if (process.env.SIMULATION_MODE === "true") {
+        return true; // No time restriction in simulation mode
+    }
+
+    const now = new Date();
+    const open = new Date(now);
+    open.setHours(9, 30, 0, 0);
+    const close = new Date(now);
+    close.setHours(15, 30, 0, 0);
+    return now >= open && now <= close;
+}
+
 async function executeOrder(order, user, currentPrice) {
-    const stockName = order.stockName.toUpperCase();
+    const stockName = order.stockName;
     const executionCost = currentPrice * order.quantity;
 
     order.executedPrice = currentPrice;
     order.status = "CLOSED";
+
+    let userHolding = await holdingModel.findOne({ user: user._id });
+
+    if (!userHolding) {
+        userHolding = new holdingModel({ user: user._id, holdings: [] });
+    }
 
     if (order.action === "BUY") {
         const reservedCost = order.targetPrice * order.quantity;
@@ -20,41 +40,31 @@ async function executeOrder(order, user, currentPrice) {
         user.reservedAmount -= reservedCost;
         user.balance += refund;
 
-        let holding = await holdingModel.findOne({ user: user._id });
-        if (!holding) {
-            holding = new holdingModel({ user: user._id, holdings: [] });
-        }
-
-        const existingStock = holding.holdings.find(h => h.stock_symbol === stockName);
+        const existingStock = userHolding.holdings.find(h => h.stock_name === stockName);
         if (existingStock) {
             const totalQty = existingStock.quantity + order.quantity;
             const totalInvest = (existingStock.average_price * existingStock.quantity) + executionCost;
             existingStock.quantity = totalQty;
             existingStock.average_price = totalInvest / totalQty;
         } else {
-            holding.holdings.push({
-                stock_symbol: stockName,
+            userHolding.holdings.push({
+                stock_name: stockName,
                 quantity: order.quantity,
                 average_price: currentPrice
             });
         }
 
-        await holding.save();
         console.log(`💸 Bought ${order.quantity} of ${stockName} @ ₹${currentPrice}`);
     }
 
     if (order.action === "SELL") {
         user.balance += executionCost;
 
-        const holding = await holdingModel.findOne({ user: user._id });
-        if (holding) {
-            const stock = holding.holdings.find(h => h.stock_symbol === stockName);
-            if (stock) {
-                stock.quantity -= order.quantity;
-                if (stock.quantity <= 0) {
-                    holding.holdings = holding.holdings.filter(h => h.stock_symbol !== stockName);
-                }
-                await holding.save();
+        const stock = userHolding.holdings.find(h => h.stock_name === stockName);
+        if (stock) {
+            stock.quantity -= order.quantity;
+            if (stock.quantity <= 0) {
+                userHolding.holdings = userHolding.holdings.filter(h => h.stock_name !== stockName);
             }
         }
 
@@ -64,6 +74,9 @@ async function executeOrder(order, user, currentPrice) {
     await Promise.all([
         order.save(),
         user.save(),
+        userHolding.save(),
+        redisClient.del(`holding:${user._id}`),
+        redisClient.del(`user:${user._id}:portfolio`),
         redisClient.del(`order:active:${order._id}`),
         redisClient.lrem("pendingOrders", 0, order._id.toString())
     ]);
@@ -95,29 +108,18 @@ const orderWorker = new Worker("orderQueue", async (job) => {
 
         const stockName = order.stockName;
         let executed = false;
-        const startTime = Date.now();
-        const maxDuration = 300000; // 5 mins
+        const pollingInterval = 1000;
 
-        if (order.isMarketOrder) {
-            const priceDataStr = await redisClient.get(`livePrice:${stockName}`);
-            const currentPrice = priceDataStr ? JSON.parse(priceDataStr).price : null;
-
-            if (currentPrice) {
-                await executeOrder(order, user, currentPrice);
-                executed = true;
-            }
-        }
-
-        while (!executed && Date.now() - startTime < maxDuration) {
+        while (!executed && isMarketOpen()) {
             const priceDataStr = await redisClient.get(`livePrice:${stockName}`);
             const currentPrice = priceDataStr ? JSON.parse(priceDataStr).price : null;
 
             if (!currentPrice) {
-                await new Promise(res => setTimeout(res, 1000));
+                await new Promise(res => setTimeout(res, pollingInterval));
                 continue;
             }
 
-            console.log(`🧾 Order ${orderId} (${order.action})`);
+            console.log(`📝 Order ${orderId} (${order.action})`);
             console.log(`📌 Ordered: ₹${order.targetPrice} | 💹 Current: ₹${currentPrice}`);
 
             const shouldExecute = order.action === "BUY"
@@ -127,17 +129,20 @@ const orderWorker = new Worker("orderQueue", async (job) => {
             if (shouldExecute) {
                 await executeOrder(order, user, currentPrice);
                 executed = true;
-            } else {
-                const delay = Math.abs(currentPrice - order.targetPrice) < (order.targetPrice * 0.01) ? 500 : 1000;
-                console.log(`⏳ Waiting for price threshold...`);
-                await new Promise(res => setTimeout(res, delay));
+                break;
             }
+
+            await new Promise(res => setTimeout(res, pollingInterval));
         }
 
         if (!executed) {
-            console.log(`🕒 Order ${orderId} expired after 5 minutes`);
+            order.status = "FAILED";
+            order.user.reservedAmount -= order.targetPrice * order.quantity;
+            order.user.balance += order.targetPrice * order.quantity;
+            await order.save();
             await redisClient.del(`order:active:${orderId}`);
             await redisClient.lrem("pendingOrders", 0, orderId.toString());
+            console.log(`🕒 Order ${orderId} failed or not executable within market hours`);
         }
 
     } catch (err) {
@@ -145,7 +150,6 @@ const orderWorker = new Worker("orderQueue", async (job) => {
         await redisClient.del(`order:active:${orderId}`);
         throw err;
     }
-
 }, {
     connection: redisClient,
     concurrency: 20,

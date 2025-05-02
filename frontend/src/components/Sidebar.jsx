@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import themeStore from "../store/themeStore";
 import useAuthStore from '../store/authStore';
+import useStockStore from '../store/stockStore';
+import axios from 'axios';
 import {
   ChevronDown,
   ChevronUp,
@@ -23,13 +25,16 @@ import {
 } from 'lucide-react';
 
 const Sidebar = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
-  const logout = useAuthStore((state) => state.logout);
 
-  const { theme } = themeStore((state) => state);
+
+  const { disconnectSSE } = useStockStore();
+  const {setLogOut} = useAuthStore();
+
+  const { theme , changeTheme } = themeStore((state) => state);
 
   useEffect(() => {
     const handleResize = () => {
@@ -50,10 +55,19 @@ const Sidebar = () => {
     setActiveDropdown(activeDropdown === label ? null : label);
   };
 
-  const handleLogout = () => {
-    logout();
-    toast.success("Logged out successfully");
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      const response = await axios.post('http://localhost:3000/api/user/logout', {}, { withCredentials: true });
+  
+      if (response.data.status === 'success') {
+        disconnectSSE();
+        toast.success(response.data.message);
+        setTimeout(()=> setLogOut() , 2000);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Logout failed. Please try again.');
+    }
   };
 
   const navigation = [
@@ -190,7 +204,7 @@ const Sidebar = () => {
           ${theme === "dark" ? "border-gray-800" : "border-gray-100"}
         `}>
           <button
-             onClick={() => themeStore.setState({ theme: theme === "dark" ? "light" : "dark" })}
+             onClick={() => changeTheme()}
             className={`
               flex items-center w-full p-3 rounded-lg transition-colors
               ${theme === "dark" ? "hover:bg-gray-800 text-gray-300" : "hover:bg-gray-100 text-gray-700"}

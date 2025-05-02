@@ -41,7 +41,7 @@ const orderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["OPEN", "CLOSED"],
+        enum: ["OPEN", "CLOSED","FAILED"],
         required: true
     }
 }, { timestamps: true });

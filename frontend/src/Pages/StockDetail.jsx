@@ -14,7 +14,25 @@ const StockDetail = () => {
   const { symbol } = useParams();
   const [loading, setLoading] = useState(true);
   const [selectedTimeframe, setSelectedTimeframe] = useState("1D");
-  const [stockData, setStockData] = useState(null);
+  const [stockData, setStockData] = useState({
+    symbol: symbol,
+    name: symbol,
+    currentPrice: 0,
+    change: 0,
+    changePercent: 0,
+    open: 0,
+    high: 0,
+    low: 0,
+    volume: "0M",
+    marketCap: "0T",
+    peRatio: 0,
+    dividendYield: 0,
+    eps: 0,
+    beta: 0,
+    yearHigh: 0,
+    yearLow: 0,
+    avgVolume: "0M"
+  });
 
   // Theme classes
   const bgColor = theme === "dark" ? "bg-gray-900" : "bg-gray-50";
@@ -35,8 +53,8 @@ const StockDetail = () => {
           // Generate mock fundamental data based on the live stock
           const mockFundamentals = {
             open: liveStock.price * (1 + (Math.random() * 0.02 - 0.01)), // ±1% from current
-            high: liveStock.price * (1 + Math.random() * 0.03), // Up to 3% higher
-            low: liveStock.price * (1 - Math.random() * 0.03), // Up to 3% lower
+            high: liveStock.price > stockData.high ? liveStock.price : stockData.high, // Up to 3% higher
+            low: liveStock.price < stockData.low ? liveStock.price : stockData.low, // Up to 3% lower
             volume: `${(Math.random() * 50 + 5).toFixed(1)}M`, // 5-55M volume
             marketCap: `${(liveStock.price * (Math.random() * 10 + 1) / 1000).toFixed(2)}T`, // Random market cap
             peRatio: (Math.random() * 30 + 10).toFixed(2), // PE between 10-40
@@ -56,28 +74,7 @@ const StockDetail = () => {
             changePercent: liveStock.percentageChange,
             ...mockFundamentals
           });
-        } else {
-          // Fallback data if stock not found
-          setStockData({
-            symbol: symbol,
-            name: symbol,
-            currentPrice: 0,
-            change: 0,
-            changePercent: 0,
-            open: 0,
-            high: 0,
-            low: 0,
-            volume: "0M",
-            marketCap: "0T",
-            peRatio: 0,
-            dividendYield: 0,
-            eps: 0,
-            beta: 0,
-            yearHigh: 0,
-            yearLow: 0,
-            avgVolume: "0M"
-          });
-        }
+        } 
         setLoading(false);
       } catch (error) {
         console.error("Error fetching stock data:", error);
