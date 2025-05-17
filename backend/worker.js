@@ -82,6 +82,7 @@ async function executeOrder(order, user, currentPrice) {
     try {
         await redisPublisher.publish('order-executed', JSON.stringify({
             userId: user._id.toString(),
+            status : "success",
             orderId: order._id.toString(),
             stockName,
             action: order.action,
@@ -166,6 +167,23 @@ const orderWorker = new Worker("orderQueue", async (job) => {
                 user.reservedAmount -= order.targetPrice * order.quantity;
                 user.balance += order.targetPrice * order.quantity;
             }
+
+            try {
+                await redisPublisher.publish('order-executed', JSON.stringify({
+                    userId: user._id.toString(),
+                    status : "fail",
+                    orderId: order._id.toString(),
+                    stockName,
+                    action: order.action,
+                    quantity: order.quantity,
+                    executedPrice: currentPrice,
+                    timestamp: new Date().toISOString()
+                }));
+                console.log('📡 Published order execution');
+            } catch (err) {
+                console.error('📡 Redis publish error:', err);
+            }
+
             await user.save();
             await order.save();
             await redis.del(`order:active:${orderId}`);

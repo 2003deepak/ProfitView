@@ -94,8 +94,13 @@ const Dashboard = () => {
   const [portfolioChange, setPortfolioChange] = useState(342.18);
   const [portfolioChangePercent, setPortfolioChangePercent] = useState(2.22);
 
-  const { stocks } = useStockStore((state) => state);
+  const { stocks } = useStockStore();
 
+  // useEffect(()=>{
+  //   console.log(stocks);
+  // },[stocks]);
+
+ 
 
   const marketIndices = [
     { 

@@ -1,23 +1,25 @@
 require("dotenv").config();
 const { getShoonyaApi } = require('./loginShoonya');
 const { STOCK_MAPPINGS, basePrices } = require('../constant/stockMapping');
-const redis = require('../config/redis'); 
+const redis = require('../config/redis');
 
 const SIMULATION_MODE = process.env.SIMULATION_MODE === 'true';
 const SIMULATION_UPDATE_INTERVAL = 2000;
 const MAX_PRICE_FLUCTUATION = 0.05;
 
 // Redis keys
-const REDIS_PRICE_UPDATE_CHANNEL = 'price-updates';
+const REDIS_PRICE_UPDATE_CHANNEL = 'price-updates'; // Subscriber listens here
 const REDIS_NOTIFICATION_CHANNEL = 'order-executed';
 
 // SSE Client Management
 const sseClients = new Map(); // Map<userId, res>
 
 // Redis Pub/Sub Setup
+// We need a separate client for subscribing because subscribe is a blocking operation
 const redisSubscriber = redis.duplicate();
+const redisPublisher = redis.duplicate(); // Use original or a duplicate for publishing
 
-// Subscribe to channels
+
 redisSubscriber.subscribe(REDIS_NOTIFICATION_CHANNEL, (err) => {
   if (err) console.error('📡 Redis subscribe error:', err);
   else console.log('📡 Subscribed to order-executed channel');
@@ -25,20 +27,26 @@ redisSubscriber.subscribe(REDIS_NOTIFICATION_CHANNEL, (err) => {
 
 redisSubscriber.subscribe(REDIS_PRICE_UPDATE_CHANNEL, (err) => {
   if (err) console.error('📡 Redis price update subscribe error:', err);
+  else console.log('📡 Subscribed to price-updates channel');
 });
+
 
 redisSubscriber.on('message', (channel, message) => {
   try {
-    if (channel === 'order-executed') {
+    if (channel === REDIS_NOTIFICATION_CHANNEL) { // Use the constant here for clarity
       const data = JSON.parse(message);
       handleOrderExecution(data);
     } else if (channel === REDIS_PRICE_UPDATE_CHANNEL) {
-      // Broadcast price updates to all SSE clients
+      
+      // console.log("I am coming till here");
+     // console.log(message);
       sseClients.forEach(res => {
         if (!res.writableEnded) {
+          console.log("Sending data from on message of redis subscriber : " + message );
           res.write(`data: ${message}\n\n`);
         }
       });
+
     }
   } catch (err) {
     console.error('❌ Error processing Redis message:', err);
@@ -75,7 +83,7 @@ const sseHandler = async (req, res) => {
   });
 };
 
-// Handle Notiifications (unchanged)
+// Handle Notifications (unchanged)
 const handleOrderExecution = async (data) => {
   const userId = data.userId?.toString();
   console.log(`📢 Received order execution for user: ${userId}`);
@@ -103,6 +111,7 @@ const handleOrderExecution = async (data) => {
   const redisKey = `notifications:${userId}`;
 
   try {
+    // Use the original redis client for commands (LPUSH, TTL, EXPIRE)
     await redis.lpush(redisKey, message);
     const ttl = await redis.ttl(redisKey);
     if (ttl === -1) {
@@ -120,23 +129,24 @@ const handleOrderExecution = async (data) => {
 // Update Redis with new prices if they've changed
 async function updateRedisPrices(stockKey, newPriceData) {
   try {
-
-    const stockName = STOCK_MAPPINGS[stockKey] || `Unknown: ${data.tk}`;
+    const stockName = STOCK_MAPPINGS[stockKey] || `Unknown: ${stockKey}`; // Use stockKey for lookup
     const redisKey = `livePrice:${stockName}`;
+
     // Optionally: get the previous JSON to compare
     const currentStr = await redis.get(redisKey);
     const current = currentStr ? JSON.parse(currentStr) : null;
 
-    if (!current || current.price !== newPriceData.price) {
-      // SET the new JSON
-      await redis.set(redisKey, JSON.stringify(newPriceData));
-      // Optionally set a TTL if you want
 
-      const channel = `price-updates:${stockKey}`;
-      await redis.publish(channel, JSON.stringify({
-        stockKey,
+    if (!current || current.price !== newPriceData.price) {
+
+      await redis.set(redisKey, JSON.stringify(newPriceData));
+
+      await redisPublisher.publish(REDIS_PRICE_UPDATE_CHANNEL, JSON.stringify({
+        stockKey, 
         ...newPriceData
       }));
+      
+      // console.log(`Published price update for ${stockName} to ${REDIS_PRICE_UPDATE_CHANNEL}`); // Optional log
       return true;
     }
     return false;
@@ -156,23 +166,27 @@ if (SIMULATION_MODE) {
     simulationData.set(id, {
       e: id.split('|')[0],
       tk: id.split('|')[1],
-      lp: basePrice,
-      c: basePrice,
-      pc: 0,
-      name
+      lp: basePrice, // Last Price
+      c: basePrice, // Closing Price (Base for % change)
+      pc: 0, // Percentage Change
+      name: name // Stock Name
     });
   });
 
   setInterval(async () => {
     try {
       const now = Date.now();
-      const updates = [];
+      // const updates = []; // No longer needed for direct SSE write
 
       for (const [id, data] of simulationData) {
         const fluctuation = (Math.random() * 2 * MAX_PRICE_FLUCTUATION) - MAX_PRICE_FLUCTUATION;
-        const newPrice = parseFloat((data.lp * (1 + fluctuation)).toFixed(2));
+        // Ensure price doesn't go negative in simulation
+        const newPrice = parseFloat(Math.max(0, data.lp * (1 + fluctuation)).toFixed(2));
+
+        // Recalculate percentage change based on original closing price (data.c)
         const pc = parseFloat(((newPrice - data.c) / data.c * 100).toFixed(2));
-        
+
+        // Update simulation data for next interval calculation
         data.lp = newPrice;
         data.pc = pc;
 
@@ -180,28 +194,18 @@ if (SIMULATION_MODE) {
         const priceData = {
           name: stockName,
           price: newPrice,
+          // Include previousClosingPrice and percentageChange for completeness
+          previousClosingPrice: data.c,
           percentageChange: pc,
           lastUpdated: now
         };
 
-        // Update Redis if price changed
-        const updated = await updateRedisPrices(id, priceData);
-        if (updated) {
-          updates.push({
-            stockKey: id,
-            ...priceData
-          });
-        }
+        // Update Redis if price changed - this *also* publishes to the correct channel now
+        await updateRedisPrices(id, priceData);
+  
       }
 
-      // Broadcast to all clients if any updates occurred
-      if (updates.length > 0) {
-        sseClients.forEach(res => {
-          if (!res.writableEnded) {
-            res.write(`data: ${JSON.stringify(updates)}\n\n`);
-          }
-        });
-      }
+
     } catch (err) {
       console.error('🔴 Simulation error:', err);
     }
@@ -210,26 +214,27 @@ if (SIMULATION_MODE) {
 
 // Real Market Data Handling
 async function receiveQuote(data) {
-  if (!data?.lp || !data?.tk) return;
+  // Check for essential data points
+  if (!data?.lp || !data?.tk || !data?.e) {
+      console.warn('Received incomplete quote data:', data);
+      return;
+  }
 
   const stockKey = `${data.e}|${data.tk}`;
   const stockName = STOCK_MAPPINGS[stockKey] || `Unknown: ${data.tk}`;
-  
+
   const priceData = {
     name: stockName,
-    price: data.lp,
+    price: parseFloat(data.lp),
     previousClosingPrice: data.c || 0,
     percentageChange: data.pc || 0,
     lastUpdated: Date.now()
   };
 
-  console.log(priceData);
+  // console.log("Sending data from recieve quote these " + stockName + JSON.stringify(priceData));
 
-  // Update Redis if price changed
-  const updated = await updateRedisPrices(stockKey, priceData);
-  if (updated) {
-    console.log("Updated price sent for", stockName, priceData.price);
-  }
+  // Update Redis if price changed - this will publish to the correct channel
+  await updateRedisPrices(stockKey, priceData);
 }
 
 // WebSocket Connection (unchanged)
@@ -249,14 +254,17 @@ function connectWebSocket() {
     socket_open: (data) => {
       const instruments = Object.keys(STOCK_MAPPINGS);
       api.subscribe(instruments.join('#'));
-      console.log(`✅ WebSocket connected, subscribed to ${instruments.length} instruments`);
+      console.log(`✅ WebSocket connected, subscribed to LTP for ${instruments.length} instruments`);
     },
-    quote: receiveQuote,
-    order: (data) => console.log('📦 Order Update:', data)
+   
+    quote: receiveQuote, 
+    order: (data) => console.log('📦 Order Update:', data),
+    socket_error: (err) => console.error('❌ WebSocket error:', err),
+    socket_close: (reason) => console.warn('🔌 WebSocket closed:', reason),
   });
 }
 
-module.exports = { 
-  connectWebSocket, 
+module.exports = {
+  connectWebSocket,
   sseHandler
 };

@@ -7,7 +7,6 @@ import StockChart from "../components/StockChart";
 import BuySellPanel from "../components/BuySellPanel";
 import { useParams } from "react-router";
 import useStockStore from '../store/stockStore';
-// import TestPanel from "../components/TestPanel"; // Assuming not needed here
 
 const StockDetail = () => {
   const { theme } = themeStore(state => state);

@@ -1,11 +1,10 @@
 const holdingModel = require("../../models/holding");
-const redis = require("../../config/redis"); 
+const redis = require("../../config/redis");
 
 const getHolding = async (req, res) => {
     try {
         const userId = req.user._id.toString();
-        
-        console.log("User ID:", userId);
+
         // Try to get holdings from Redis cache
         const cachedHoldings = await redis.get(`holding:${userId}`);
 
@@ -18,36 +17,44 @@ const getHolding = async (req, res) => {
         }
 
         // If not found in cache, query from database
-        const user = await holdingModel.findOne({ user: userId });
+        const userHoldings = await holdingModel.findOne({ user: userId });
 
-        if (!user) {
-            return res.status(404).json({
-                status: "fail",
-                message: "No User Found",
+        if (!userHoldings) {
+            const emptyData = {
+                holdings: [],
+                totalInvestment: 0,
+            };
+
+            // Optionally cache the empty result
+            await redis.set(`holding:${userId}`, JSON.stringify(emptyData));
+
+            return res.status(201).json({
+                status: "success",
+                message: "No Holdings Found (From DB)",
+                data: emptyData,
             });
         }
 
+        // If holdings exist, build the response data
         const userData = {
-            holdings: user.holdings,
-            totalInvestment: user.totalInvestment,
-          };
-          
+            holdings: userHoldings.holdings || [],
+            totalInvestment: userHoldings.totalInvestment || 0,
+        };
+
         // Store the object in Redis
         await redis.set(`holding:${userId}`, JSON.stringify(userData));
 
-      
-
         return res.status(201).json({
             status: "success",
-            message: "Fetched Holding Successfully ( From DB )",
-            data: user.holdings,
+            message: "Fetched Holding Successfully (From DB)",
+            data: userData,
         });
 
     } catch (error) {
         console.error("Error fetching holdings:", error);
         return res.status(500).json({
-            status: 'fail',
-            message: 'Holdings Error from getHolding API'
+            status: "fail",
+            message: "Holdings Error from getHolding API"
         });
     }
 };
