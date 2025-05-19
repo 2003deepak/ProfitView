@@ -3,7 +3,7 @@ import { DollarSign, Info } from "lucide-react";
 import useStockStore from '../store/stockStore';
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import useUserStore from "../store/userStore";
 import useOrderStore from "../store/orderStore";
 
@@ -16,10 +16,8 @@ export default function BuySellPanel({ stockName, theme }) {
 
   const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [placementMessage, setPlacementMessage] = useState(''); // State for temporary placement success message
 
 
-  // console.log("I am called");
   // --- Stock Store Data ---
   const currentPrice = useStockStore(state => state.stocks[stockName]?.price || 0);
   const orderExecuted = useStockStore(state => state.orderExecuted);
@@ -28,12 +26,12 @@ export default function BuySellPanel({ stockName, theme }) {
   // --- User Store Data/Actions ---
   const holdings = useUserStore(state => state.holdings);
   const balance = useUserStore(state => state.balance);
-  // fetchUserData and getUserHoldings will be called by stockStore upon execution event
 
-  // --- Order Store Actions ---
-  // fetchOrders will be called by stockStore upon execution event
+  // --- Order Store --- 
+  const fetchOrders = useOrderStore(state => state.fetchOrders);
 
-  const [error, setError] = useState(""); // State for API submission errors
+
+  const [error, setError] = useState(""); 
   const [currentHoldingQuantity, setCurrentHoldingQuantity] = useState(0);
 
   const navigate = useNavigate();
@@ -89,7 +87,7 @@ export default function BuySellPanel({ stockName, theme }) {
 
           // Clear the state after processing so the same execution doesn't trigger toast again
           setOrderExecuted(null);
-          setPlacementMessage(''); // Clear any pending placement message once execution happens
+         
       }
   }, [orderExecuted, setOrderExecuted]); // Depend on orderExecuted state and the setter action
 
@@ -107,8 +105,6 @@ export default function BuySellPanel({ stockName, theme }) {
   useEffect(() => {
     let isValid = true;
     setError(''); // Clear previous API errors on input changes
-    setPlacementMessage(''); // Clear placement message on input changes
-
 
     // Basic validation: Quantity must be a positive integer
     if (parsedQuantity <= 0 || !Number.isInteger(parsedQuantity)) {
@@ -156,12 +152,6 @@ export default function BuySellPanel({ stockName, theme }) {
       }
     }
 
-    // Check limit price validity independent of order type if orderType is limit
-    // This is covered by the buy/sell limit price checks above now, but good to be explicit if needed
-    // if (orderType === "limit" && (parsedLimitPrice <= 0 || isNaN(parsedLimitPrice))) {
-    //      isValid = false;
-    // }
-
 
     // Disable if currently submitting
     if (isSubmitting) {
@@ -206,7 +196,6 @@ export default function BuySellPanel({ stockName, theme }) {
     }
 
     setError(""); // Clear previous API errors
-    setPlacementMessage(''); // Clear previous placement messages
     setIsSubmitting(true);
 
     const orderDetails = {
@@ -217,7 +206,6 @@ export default function BuySellPanel({ stockName, theme }) {
       isMarketOrder: orderType === "market"
     };
 
-    // console.log("Attempting to place order:", orderDetails);
 
     try {
       const response = await axios.post(
@@ -229,19 +217,14 @@ export default function BuySellPanel({ stockName, theme }) {
       if (response.data.status === "success") {
         // console.log("Order placement API successful:", response.data);
         toast.success("Order Placed Successfully");
-        // --- Handle successful *placement* ---
-        // DO NOT show success toast here - that's for execution.
-        // DO NOT fetch data here - that happens on execution event.
-        // DO NOT navigate here.
 
-        // Optionally show a temporary message indicating placement success
-        setPlacementMessage(response.data.message || `Order placed successfully. Awaiting execution...`);
 
         // Clear form inputs after successful placement
         setQuantity('');
         setLimitPrice('');
         setOrderType("market"); // Reset to default order type
         setActiveTab("buy"); // Reset to default tab (adjust if you want to stay on sell)
+        fetchOrders();
 
 
       } else {
@@ -266,20 +249,7 @@ export default function BuySellPanel({ stockName, theme }) {
 
   return (
     <>
-       {/* ToastContainer should ideally be placed high up in your application structure (e.g., App.js)
-           to avoid multiple containers and ensure it overlays everything correctly.
-           Keeping it here for this example, but consider moving it. */}
-       <ToastContainer
-          position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme={theme === "dark" ? "dark" : "light"}
-        />
+       
 
       <div className={`${bgColor} rounded-xl border ${borderColor} p-4 md:p-6 sticky top-4 md:top-6`}>
         {/* Buy/Sell tabs */}
@@ -445,12 +415,6 @@ export default function BuySellPanel({ stockName, theme }) {
            {error && (
                <div className="text-red-500 text-sm mt-2">{error}</div>
            )}
-
-            {/* Placement success message display */}
-           {placementMessage && (
-               <div className="text-green-500 text-sm mt-2">{placementMessage}</div>
-           )}
-
 
           {/* Order summary */}
           <div className={`p-3 md:p-4 rounded-lg ${inputBgColor} space-y-1 md:space-y-2 text-xs md:text-sm`}>

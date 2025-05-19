@@ -13,6 +13,7 @@ const getUserData = require('../controllers/userController/getUserData');
 const updateUserDetails = require('../controllers/userController/updateUserDetails');
 const getOrders = require('../controllers/userController/getOrders');
 const getNotification = require('../controllers/userController/getNotification');
+const updateOrder = require('../controllers/userController/updateOrder');
 
 
 
@@ -26,6 +27,7 @@ router.get('/getUserData',isLoggedIn,getUserData);
 router.get("/getOrders" , isLoggedIn , getOrders);
 router.get("/getNotifications" , isLoggedIn,getNotification);
 router.put('/updateUser',isLoggedIn,updateUserDetails);
+router.put('/updateOrder' ,isLoggedIn , updateOrder);
 
 
 

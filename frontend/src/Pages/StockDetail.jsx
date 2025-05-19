@@ -60,20 +60,7 @@ const activeButtonBg = theme === "dark" ? "bg-blue-600" : "bg-blue-500";
 const inactiveButtonBg = theme === "dark" ? "bg-gray-700" : "bg-gray-100";
 
 
-  // Effect 2: (Optional but good for clarity) Handle the case where live data arrives *later*
-  // This effect is redundant if Effect 1 is sufficient, let's rethink Effect 1's dependencies.
-
-  // Simpler approach for Effect 1: React only to symbol change for fundamentals and loading
-  // React to liveStockData separately for derived values.
-
-  // Let's try this structure:
-  // - Effect 1: Reacts to `symbol`. Sets `isLoading` true, clears `fundamentals`.
-  // - Effect 2: Reacts to `liveStockData`. If `liveStockData` is available, set `isLoading(false)`.
-  // - Effect 3: Reacts to `symbol` and `liveStockData`. *If* `liveStockData` is available *and* `fundamentals` is null (or the symbol in fundamentals doesn't match), generate and set `fundamentals`.
-
-  // Even better: Combine the loading and fundamentals generation.
-  // The main `useEffect` should react to `symbol`. Inside, *if* `liveStockData` is *already* there, generate fundamentals and set loading to false.
-  // If `liveStockData` is *not* there, `isLoading` remains true initially. A subsequent render (triggered by `liveStockData` arriving via the store) will re-run the effect, find `liveStockData`, generate fundamentals, and set `isLoading` to false.
+  
 
   useEffect(() => {
       // Reset state when symbol changes

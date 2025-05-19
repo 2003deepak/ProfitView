@@ -51,10 +51,6 @@ const Order = () => {
     setFormattedTodaysOrders(formatOrderData(todaysOrders));
   }, [openOrders, executedOrders, todaysOrders]);
 
-  // Initial data fetch
-  useEffect(() => {
-    fetchOrders(); // Call your fetchOrders action here
-  }, [fetchOrders]);
 
   // Filter orders based on active tab
   const getFilteredOrders = () => {
@@ -128,26 +124,6 @@ const Order = () => {
     });
   };
 
-  // Calculate profit/loss for executed orders
-  const calculateProfitLoss = (order) => {
-    if (!order || order.status !== "CLOSED" && order.type !== "SELL") return null;
-    
-    const executedPrice = parseFloat(order.executedPrice);
-    const targetPrice = parseFloat(order.targetPrice);
-    const quantity = parseInt(order.quantity);
-    
-    if (isNaN(executedPrice) || isNaN(targetPrice) || isNaN(quantity)) {
-      return null;
-    }
-
-    const profitLoss = (targetPrice - executedPrice) * quantity;
-    
-    return {
-      value: Math.abs(profitLoss),
-      isProfit: profitLoss >= 0,
-      rawValue: profitLoss
-    };
-  };
 
   // Order metrics - will be 0 if no orders
   const openOrdersCount = openOrders?.length || 0;
@@ -296,13 +272,12 @@ const Order = () => {
                 </div>
               ) : (
                 filteredOrders.map((order, index) => {
-                  const profitLoss = calculateProfitLoss(order);
-                  
+                
                   return (
                     <div
                       key={order.id || index}
                       className={`rounded-xl overflow-hidden ${cardBg} shadow-md transition-all ${hoverBg} cursor-pointer`}
-                      onClick={() => navigate(`/user/order/${order.id}`)}
+                      onClick={() => navigate(`/user/stocks/${order.stockName}`)}
                     >
                       <div className="p-4 md:p-5">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
@@ -351,6 +326,7 @@ const Order = () => {
                                   <p className={`text-xs ${secondaryTextColor}`}>Current Price</p>
                                   <p className="font-medium">₹{stocks[order.stock_name]?.price || 0}</p>
                                 </div>
+                                
                               </>
                             ) : (
                               <>
@@ -373,14 +349,6 @@ const Order = () => {
                               </div>
                             </div>
 
-                            {profitLoss && (
-                              <div className="min-w-[100px]">
-                                <p className={`text-xs ${secondaryTextColor}`}>P&L</p>
-                                <p className={`font-medium ${profitLoss.isProfit ? 'text-emerald-500' : 'text-red-500'}`}>
-                                  {profitLoss.isProfit ? '+' : '-'}₹{profitLoss.value.toFixed(2)}
-                                </p>
-                              </div>
-                            )}
                           </div>
                         </div>
                       </div>

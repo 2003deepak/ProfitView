@@ -9,7 +9,7 @@ const MAX_PRICE_FLUCTUATION = 0.05;
 
 // Redis keys
 const REDIS_PRICE_UPDATE_CHANNEL = 'price-updates'; // Subscriber listens here
-const REDIS_NOTIFICATION_CHANNEL = 'order-executed';
+const REDIS_NOTIFICATION_CHANNEL = 'order-updates';
 
 // SSE Client Management
 const sseClients = new Map(); // Map<userId, res>
@@ -35,14 +35,12 @@ redisSubscriber.on('message', (channel, message) => {
   try {
     if (channel === REDIS_NOTIFICATION_CHANNEL) { // Use the constant here for clarity
       const data = JSON.parse(message);
-      handleOrderExecution(data);
+      handleOrderNotification(data);
     } else if (channel === REDIS_PRICE_UPDATE_CHANNEL) {
       
-      // console.log("I am coming till here");
-     // console.log(message);
       sseClients.forEach(res => {
         if (!res.writableEnded) {
-          console.log("Sending data from on message of redis subscriber : " + message );
+          //console.log("Sending data from on message of redis subscriber : " + message );
           res.write(`data: ${message}\n\n`);
         }
       });
@@ -84,7 +82,7 @@ const sseHandler = async (req, res) => {
 };
 
 // Handle Notifications (unchanged)
-const handleOrderExecution = async (data) => {
+const handleOrderNotification = async (data) => {
   const userId = data.userId?.toString();
   console.log(`📢 Received order execution for user: ${userId}`);
 
@@ -95,7 +93,7 @@ const handleOrderExecution = async (data) => {
 
   if (res) {
     console.log(`📤 Sending notification to ${userId}`);
-    res.write(`event: orderExecuted\n`);
+    res.write(`event: orderUpdate\n`);
     res.write(`data: ${JSON.stringify(data)}\n\n`);
   }
 
@@ -128,6 +126,8 @@ const handleOrderExecution = async (data) => {
 
 // Update Redis with new prices if they've changed
 async function updateRedisPrices(stockKey, newPriceData) {
+
+  // console.log("i have recieved new data");
   try {
     const stockName = STOCK_MAPPINGS[stockKey] || `Unknown: ${stockKey}`; // Use stockKey for lookup
     const redisKey = `livePrice:${stockName}`;
@@ -194,7 +194,6 @@ if (SIMULATION_MODE) {
         const priceData = {
           name: stockName,
           price: newPrice,
-          // Include previousClosingPrice and percentageChange for completeness
           previousClosingPrice: data.c,
           percentageChange: pc,
           lastUpdated: now
@@ -219,6 +218,8 @@ async function receiveQuote(data) {
       console.warn('Received incomplete quote data:', data);
       return;
   }
+
+  // console.log(data);
 
   const stockKey = `${data.e}|${data.tk}`;
   const stockName = STOCK_MAPPINGS[stockKey] || `Unknown: ${data.tk}`;
@@ -258,7 +259,7 @@ function connectWebSocket() {
     },
    
     quote: receiveQuote, 
-    order: (data) => console.log('📦 Order Update:', data),
+   // order: (data) => console.log('📦 Order Update:', data),
     socket_error: (err) => console.error('❌ WebSocket error:', err),
     socket_close: (reason) => console.warn('🔌 WebSocket closed:', reason),
   });

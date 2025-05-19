@@ -102,6 +102,12 @@ const placeOrder = async (req, res) => {
         await redis.lpush("pendingOrders", order._id.toString());
         await orderQueue.add("processOrder", { orderId: order._id });
 
+        // Delete the userOrders Cache , to get the updated User Order 
+        await redis.del(`userOrders:${req.user._id}`);
+
+        // Delete the userData , to update the balance 
+        await redis.del(`user:${req.user._id}`);
+
         console.log("✅ Order placed and added to queue:", order._id);
 
         return res.status(201).json({

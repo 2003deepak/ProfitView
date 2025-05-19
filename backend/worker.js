@@ -80,8 +80,9 @@ async function executeOrder(order, user, currentPrice) {
 
     // 3. Only AFTER successful save, publish notification
     try {
-        await redisPublisher.publish('order-executed', JSON.stringify({
+        await redisPublisher.publish('order-updates', JSON.stringify({
             userId: user._id.toString(),
+            updateType : "Order Executed",
             status : "success",
             orderId: order._id.toString(),
             stockName,
@@ -146,7 +147,7 @@ const orderWorker = new Worker("orderQueue", async (job) => {
             }
 
             // console.log(`📝 Order ${orderId} (${order.action})`);
-            // console.log(`📌 Ordered: ₹${order.targetPrice} | 💹 Current: ₹${currentPrice}`);
+            console.log(`📌 Ordered: ₹${order.targetPrice} | 💹 Current: ₹${currentPrice}`);
 
             const shouldExecute = order.action === "BUY"
                 ? currentPrice <= order.targetPrice
@@ -169,8 +170,9 @@ const orderWorker = new Worker("orderQueue", async (job) => {
             }
 
             try {
-                await redisPublisher.publish('order-executed', JSON.stringify({
+                await redisPublisher.publish('order-updates', JSON.stringify({
                     userId: user._id.toString(),
+                    updateType : "Order Failed",
                     status : "fail",
                     orderId: order._id.toString(),
                     stockName,

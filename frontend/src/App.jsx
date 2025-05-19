@@ -16,7 +16,6 @@ import StockDetail from "./Pages/StockDetail";
 import Profile from "./Pages/Profile";
 import Order from './Pages/Order';
 import Settings from "./Pages/Settings";
-import TestPanel from "./components/TestPanel";
 
 function App() {
 
@@ -108,14 +107,7 @@ function App() {
           }
         />
 
-        <Route
-          path="/user/test"
-          element={
-            <ProtectedRoute>
-              <TestPanel/>
-            </ProtectedRoute>
-          }
-        />
+       
         
       </Route>
 
