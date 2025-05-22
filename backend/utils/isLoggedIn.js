@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 
 const isLoggedIn = (req, res, next) => {
+
+    
     try {
         // Check if token exists
         if (!req.cookies.token) {

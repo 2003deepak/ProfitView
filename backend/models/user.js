@@ -38,11 +38,8 @@ const userSchema = mongoose.Schema({
     min: 0,
     default: 0
   },
-  holding: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "holding",
-    default: null
-  }
+  resetToken: String,
+  resetTokenExpiration: Date
 }, { timestamps: true });
 
 module.exports = mongoose.model("user", userSchema);

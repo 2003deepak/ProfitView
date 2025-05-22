@@ -1,8 +1,8 @@
-import { React, useState, useEffect, useMemo, useRef } from "react"; // Import useRef
+import { React, useState, useEffect, useMemo, useRef } from "react"; 
 import Sidebar from "../components/Sidebar";
 import TopSearchBar from "../components/TopSearchBar";
 import themeStore from "../store/themeStore";
-import { ArrowDown, ArrowUp, Clock } from "lucide-react"; // Removed Star if not used
+import { ArrowDown, ArrowUp, Clock } from "lucide-react"; 
 import StockChart from "../components/StockChart";
 import BuySellPanel from "../components/BuySellPanel";
 import { useParams } from "react-router";
@@ -14,7 +14,6 @@ const StockDetail = () => {
 
   const liveStockData = useStockStore(state => state.stocks[symbol]);
   const [selectedTimeframe, setSelectedTimeframe] = useState("1D");
-  // const [fundamentals, setFundamentals] = useState();
   const [isLoading, setIsLoading] = useState(true);
 
   const fundamentals = {
@@ -37,7 +36,7 @@ const StockDetail = () => {
   useEffect(() => {
       setIsLoading(true); // Assume loading whenever symbol changes
 
-      // Check if the live data for the new symbol is available in the store immediately
+     
       if (liveStockData) {
           
           setIsLoading(false);
@@ -47,26 +46,20 @@ const StockDetail = () => {
 
 
   // Theme classes (kept for clarity)
-const bgColor = theme === "dark" ? "bg-gray-900" : "bg-gray-50";
-const textColor = theme === "dark" ? "text-gray-100" : "text-gray-900";
-const secondaryTextColor = theme === "dark" ? "text-gray-400" : "text-gray-500";
-const cardBg = theme === "dark" ? "bg-gray-800" : "bg-white";
-const borderColor = theme === "dark" ? "border-gray-700" : "border-gray-200";
-const activeButtonBg = theme === "dark" ? "bg-blue-600" : "bg-blue-500";
-const inactiveButtonBg = theme === "dark" ? "bg-gray-700" : "bg-gray-100";
+  const bgColor = theme === "dark" ? "bg-gray-900" : "bg-gray-50";
+  const textColor = theme === "dark" ? "text-gray-100" : "text-gray-900";
+  const secondaryTextColor = theme === "dark" ? "text-gray-400" : "text-gray-500";
+  const cardBg = theme === "dark" ? "bg-gray-800" : "bg-white";
+  const borderColor = theme === "dark" ? "border-gray-700" : "border-gray-200";
+  const activeButtonBg = theme === "dark" ? "bg-blue-600" : "bg-blue-500";
+  const inactiveButtonBg = theme === "dark" ? "bg-gray-700" : "bg-gray-100";
 
 
   
 
-  useEffect(() => {
-      setIsLoading(true);
-     
-  }, [symbol]);
-
-
-
    // Derived state for display
    const { currentPrice, change, changePercent } = useMemo(() => {
+
      const price = liveStockData?.price || 0;
      const prevClose = liveStockData?.previousClosingPrice || 0;
      let calculatedChange = 0;
@@ -88,14 +81,13 @@ const inactiveButtonBg = theme === "dark" ? "bg-gray-700" : "bg-gray-100";
    }, [liveStockData]); // Only recalculate when liveStockData changes
 
 
-
    const isDataReady = !isLoading && liveStockData !== null && fundamentals !== null;
 
    
 
   // --- Loading/Error State Render ---
   if (!isDataReady) {
-    // Check the specific state to show appropriate message
+   
     if (isLoading) {
          // Loading state: Data is either not fetched yet or symbol changed
          return (
@@ -107,8 +99,7 @@ const inactiveButtonBg = theme === "dark" ? "bg-gray-700" : "bg-gray-100";
              </div>
          );
     } else {
-        // Not loading, but data not ready means liveStockData or fundamentals are null/undefined
-        // This indicates the stock was not found in the store after loading finished.
+       
         return (
              <div className={`min-h-screen w-screen flex items-center justify-center ${bgColor} ${textColor}`}>
                  <div className={`text-red-500 ${textColor}`}>Stock '{symbol}' not found or data unavailable.</div>
@@ -128,7 +119,7 @@ const inactiveButtonBg = theme === "dark" ? "bg-gray-700" : "bg-gray-100";
     { label: "All", value: "ALL" },
   ];
 
-  // --- Main Content Render (only if data is ready) ---
+  
   return (
     <div className={`flex h-screen w-screen overflow-hidden ${bgColor} ${textColor}`}>
       <Sidebar />
@@ -200,12 +191,12 @@ const inactiveButtonBg = theme === "dark" ? "bg-gray-700" : "bg-gray-100";
 
                 <div className="h-[300px] sm:h-[400px]">
                   {/* Pass symbol and potentially live data or let Chart fetch its own */}
-                  <StockChart symbol={symbol} timeframe={selectedTimeframe} theme={theme} />
+                  <StockChart symbol={symbol} timeframe={selectedTimeframe}  />
                 </div>
               </div>
 
               {/* Stock info (Key Statistics) */}
-              {/* Only render fundamentals section if fundamentals data is available */}
+
               {fundamentals && (
                 <div className={`${cardBg} rounded-xl border ${borderColor} p-6 mb-6`}>
                   <h2 className="text-xl font-bold mb-4">Key Statistics</h2>
@@ -278,7 +269,7 @@ const inactiveButtonBg = theme === "dark" ? "bg-gray-700" : "bg-gray-100";
             {/* Buy/Sell panel */}
             <div className="w-full lg:w-1/3">
               {/* Pass the symbol prop */}
-              <BuySellPanel stockName={symbol} theme={theme} />
+              <BuySellPanel stockName={symbol} />
             </div>
           </div>
         </main>

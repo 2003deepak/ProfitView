@@ -87,39 +87,6 @@ export default function Profile() {
     setIsEditing(false)
   }
 
-  const marketIndices = [
-    { 
-      name: "Nifty 50", 
-      value: stocks["Nifty 50"]?.price ? `₹${stocks["Nifty 50"].price.toLocaleString('en-IN')}` : "N/A", 
-      change: stocks["Nifty 50"]?.percentageChange ? 
-        `${stocks["Nifty 50"].percentageChange > 0 ? '+' : ''}${stocks["Nifty 50"].percentageChange.toFixed(2)}%` : "N/A", 
-      isPositive: stocks["Nifty 50"]?.percentageChange >= 0,
-      icon: <TrendingUp className="h-5 w-5 mr-2 text-blue-500" />
-    },
-    { 
-      name: "Nifty Bank", 
-      value: stocks["Nifty Bank"]?.price ? `₹${stocks["Nifty Bank"].price.toLocaleString('en-IN')}` : "N/A", 
-      change: stocks["Nifty Bank"]?.percentageChange ? 
-        `${stocks["Nifty Bank"].percentageChange > 0 ? '+' : ''}${stocks["Nifty Bank"].percentageChange.toFixed(2)}%` : "N/A", 
-      isPositive: stocks["Nifty Bank"]?.percentageChange >= 0,
-      icon: <LineChart className="h-5 w-5 mr-2 text-blue-500" />
-    },
-    { 
-      name: "SENSEX", 
-      value: stocks["SENSEX"]?.price ? `₹${stocks["SENSEX"].price.toLocaleString('en-IN')}` : "N/A", 
-      change: stocks["SENSEX"]?.percentageChange ? 
-        `${stocks["SENSEX"].percentageChange > 0 ? '+' : ''}${stocks["SENSEX"].percentageChange.toFixed(2)}%` : "N/A", 
-      isPositive: stocks["SENSEX"]?.percentageChange >= 0,
-      icon: <TrendingUp className="h-5 w-5 mr-2 text-blue-500" />
-    },
-    { 
-      name: "Russell 2000", 
-      value: "$2,042.51", 
-      change: "+0.72%", 
-      isPositive: true,
-      icon: <LineChart className="h-5 w-5 mr-2 text-blue-500" />
-    }
-  ]
 
   return (
     <div className={`flex h-screen w-screen overflow-hidden ${bgColor} ${textColor}`}>
@@ -253,43 +220,7 @@ export default function Profile() {
                   </div>
                 </motion.div>
 
-                {/* Market Indices */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className={`${cardBgColor} rounded-xl border ${borderColor} p-6 shadow-sm`}
-                >
-                  <h2 className="text-lg font-medium mb-4 flex items-center">
-                    <TrendingUp className="h-5 w-5 mr-2 text-blue-500" />
-                    Market Indices
-                  </h2>
-                  <div className="space-y-3">
-                    {marketIndices.map((index, i) => (
-                      <div key={i} className={`p-3 rounded-lg ${borderColor} border hover:border-blue-500 transition-colors`}>
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center">
-                            {index.icon}
-                            <div>
-                              <p className="font-medium">{index.name}</p>
-                              <p className={`text-sm ${mutedTextColor}`}>{index.value}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center">
-                            <p className={`font-medium ${index.isPositive ? 'text-green-500' : 'text-red-500'}`}>
-                              {index.change}
-                            </p>
-                            {index.isPositive ? (
-                              <ArrowUp className="h-4 w-4 ml-1 text-green-500" />
-                            ) : (
-                              <ArrowDown className="h-4 w-4 ml-1 text-red-500" />
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
+               
               </div>
 
               {/* Right column - Profile details */}

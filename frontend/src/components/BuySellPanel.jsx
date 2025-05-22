@@ -1,49 +1,35 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { DollarSign, Info } from "lucide-react";
 import useStockStore from '../store/stockStore';
 import axios from 'axios';
-import { useNavigate } from "react-router-dom";
-import { toast , ToastContainer} from 'react-toastify';
+import { useNavigate, useLocation } from "react-router-dom";
+import { toast, ToastContainer } from 'react-toastify';
 import useUserStore from "../store/userStore";
 import useOrderStore from "../store/orderStore";
-import { useLocation } from 'react-router-dom';
+import themeStore from "../store/themeStore";
 
-
-export default function BuySellPanel({ stockName, theme}) {
-  const [activeTab, setActiveTab] = useState("buy"); // 'buy' or 'sell'
-  const [orderType, setOrderType] = useState("market"); // 'market' or 'limit'
-  const [quantity, setQuantity] = useState(''); // Use empty string initially for input clarity
-  const [limitPrice, setLimitPrice] = useState(''); // Use empty string initially for input clarity
-
-  const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
+export default function BuySellPanel({ stockName }) {
+  const [activeTab, setActiveTab] = useState("buy");
+  const [orderType, setOrderType] = useState("market");
+  const [quantity, setQuantity] = useState('');
+  const [limitPrice, setLimitPrice] = useState('');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [orderId, setOrderId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const location = useLocation();
-  const prefilledData = location.state?.prefilledData;
-
-  if(prefilledData) {
-    setActiveTab(prefilledData.action.toLowerCase());
-    setOrderType(prefilledData.isMarketOrder ? "market" : "limit");
-    setQuantity(prefilledData.quantity);
-    setLimitPrice(prefilledData.targetPrice || '');
-
-  }
-
-
-  // --- Stock Store Data ---
+  const navigate = useNavigate();
   const currentPrice = useStockStore(state => state.stocks[stockName]?.price || 0);
-
-  // --- User Store Data/Actions ---
+  const theme = themeStore(state => state.theme);
   const holdings = useUserStore(state => state.holdings);
   const balance = useUserStore(state => state.balance);
-
-  // --- Order Store --- 
   const fetchOrders = useOrderStore(state => state.fetchOrders);
 
-  const [error, setError] = useState(""); 
-  const [currentHoldingQuantity, setCurrentHoldingQuantity] = useState(0);
+  const parsedQuantity = useMemo(() => parseInt(quantity, 10) || 0, [quantity]);
+  const parsedLimitPrice = useMemo(() => parseFloat(limitPrice) || 0, [limitPrice]);
 
-  const navigate = useNavigate();
+  console.log("I am rendering the BuySellPanel component");
 
   // Theme classes (kept for clarity)
   const bgColor = theme === "dark" ? "bg-gray-800" : "bg-white";
@@ -56,171 +42,103 @@ export default function BuySellPanel({ stockName, theme}) {
   const primaryBg = theme === "dark" ? "bg-blue-600" : "bg-blue-500";
   const secondaryBg = theme === "dark" ? "bg-gray-700" : "bg-gray-100";
 
+  const currentHoldingQuantity = useMemo(() => {
+    if (activeTab !== "sell") return 0;
+    return holdings.find(h => h.stock_name === stockName)?.quantity || 0;
+  }, [holdings, stockName, activeTab]);
 
-  // Effect to update holding quantity when tab or holdings change
-  useEffect(() => {
-    if (activeTab === "sell") {
-      getStockQuantity(stockName);
-    } else {
-      setCurrentHoldingQuantity(0);
-    }
-    
-  }, [activeTab, stockName, holdings]);
+  const totalCost = useMemo(() => {
+    return (orderType === "market" ? currentPrice : parsedLimitPrice) * parsedQuantity;
+  }, [orderType, currentPrice, parsedLimitPrice, parsedQuantity]);
 
+  const isSubmitDisabled = useMemo(() => {
+    if (isSubmitting) return true;
+    if (parsedQuantity <= 0 || !Number.isInteger(parsedQuantity)) return true;
+    if (orderType === "market" && currentPrice <= 0) return true;
 
-  // Function to get stock quantity from holdings
-  const getStockQuantity = (stockName) => {
+    if (orderType === "limit" && parsedLimitPrice <= 0) return true;
 
-    const stock = holdings.find((stock) => stock.stock_name === stockName);
-    setCurrentHoldingQuantity(stock ? stock.quantity : 0);
-  }
-
-
-  // Calculate total cost (derive directly from state/props)
-  const parsedQuantity = parseInt(quantity, 10) || 0; 
-  const parsedLimitPrice = parseFloat(limitPrice) || 0; 
-
-  const totalCost = orderType === "market"
-    ? (currentPrice * parsedQuantity)
-    : (parsedLimitPrice) * parsedQuantity;
-
-  // Validate inputs and enable/disable submit button
-  useEffect(() => {
-    let isValid = true;
-    setError('');
-
-    // Basic validation: Quantity must be a positive integer
-    if (parsedQuantity <= 0 || !Number.isInteger(parsedQuantity)) {
-      isValid = false;
-    }
-
-    // Price must be available for market orders (cannot place if price is 0 or NaN)
-    if (orderType === "market" && (currentPrice <= 0 || isNaN(currentPrice))) {
-        isValid = false;
-    }
-
-    // Active tab specific checks
     if (activeTab === "buy") {
-      // Check sufficient balance
-      const currentBalance = parseFloat(balance) || 0;
-      if (currentBalance < totalCost || isNaN(totalCost)) {
-         isValid = false;
-      }
-
-      if (orderType === "limit") {
-        // Check minimum limit price for buy (must be >= 90% of current price, example rule)
-        const minLimitPrice = currentPrice * 0.9;
-        if (parsedLimitPrice <= 0 || isNaN(parsedLimitPrice) || (currentPrice > 0 && parsedLimitPrice < minLimitPrice)) {
-          isValid = false;
-
-        }
-      }
-    } else { 
-     
-      if (parsedQuantity > (currentHoldingQuantity || 0)) {
-        isValid = false;
-        
-      }
-     
-      if (orderType === "limit") {
-         const maxLimitPrice = currentPrice * 1.1;
-         if (parsedLimitPrice <= 0 || isNaN(parsedLimitPrice) || (currentPrice > 0 && parsedLimitPrice > maxLimitPrice)) {
-            isValid = false;
-           
-         }
-      }
+      if (isNaN(totalCost) || parseFloat(balance) < totalCost) return true;
+    } else {
+      if (parsedQuantity > currentHoldingQuantity) return true;
     }
 
+    return false;
+  }, [
+    parsedQuantity,
+    orderType,
+    parsedLimitPrice,
+    currentPrice,
+    balance,
+    totalCost,
+    activeTab,
+    currentHoldingQuantity,
+    isSubmitting,
+  ]);
 
-    // Disable if currently submitting
-    if (isSubmitting) {
-        isValid = false;
+  useEffect(() => {
+    const data = location.state?.prefilledData;
+    if (data) {
+      setIsEditMode(true);
+      setActiveTab(data.action.toLowerCase());
+      setOrderType(data.isMarketOrder ? "market" : "limit");
+      setQuantity(data.quantity.toString());
+      setOrderId(data.orderId);
+      if (!data.isMarketOrder && data.targetPrice) {
+        setLimitPrice(data.targetPrice.toString());
+      }
     }
-
-    setIsSubmitDisabled(!isValid);
-
-
-  }, [quantity, limitPrice, orderType, activeTab, currentPrice, currentHoldingQuantity, balance, totalCost, isSubmitting]);
-
-
-  // Handle quantity change - Allow empty input but ensure it's a number when used
-  const handleQuantityChange = (e) => {
-      setQuantity(e.target.value);
-  }
-  
-
-  // Handle limit price change - Allow empty input but ensure it's a number when used
-  const handleLimitPriceChange = (e) => {
-      setLimitPrice(e.target.value);
-
-  }
-
+  }, [location.state]);
 
   const handleSubmitOrder = async (e) => {
     e.preventDefault();
+    if (isSubmitDisabled) return;
 
-    // Double-check disabled state client-side before submitting
-    if (isSubmitDisabled || isSubmitting) {
-      console.log("Submit is disabled or already submitting.");
-      return;
-    }
-
-    setError(""); // Clear previous API errors
     setIsSubmitting(true);
+    setError("");
 
     const orderDetails = {
       stockName,
       action: activeTab.toUpperCase(),
-      quantity: parsedQuantity, // Use parsed value
-      targetPrice: orderType === "limit" ? parsedLimitPrice : null, // Use parsed value
-      isMarketOrder: orderType === "market"
+      quantity: parsedQuantity,
+      targetPrice: orderType === "limit" ? parsedLimitPrice : null,
+      isMarketOrder: orderType === "market",
+      orderId: isEditMode ? orderId : undefined,
     };
 
+    const url = isEditMode 
+      ? "http://localhost:3000/api/user/updateOrder" 
+      : "http://localhost:3000/api/user/placeOrder";
 
     try {
-      const response = await axios.post(
-        "http://localhost:3000/api/user/placeOrder",
-        orderDetails,
-        { withCredentials: true }
-      );
+      const res = await axios.post(url, orderDetails, { withCredentials: true });
+      if (res.data.status === "success") {
+        toast.success(isEditMode ? "Order updated successfully" : "Order placed successfully");
 
-      if (response.data.status === "success") {
-        // console.log("Order placement API successful:", response.data);
-        toast.success("Order Placed Successfully");
-
-
-        // Clear form inputs after successful placement
         setQuantity('');
         setLimitPrice('');
-        setOrderType("market"); 
-        setActiveTab("buy"); 
+        setOrderType("market");
+        setActiveTab("buy");
+        setIsEditMode(false);
+        setOrderId(null);
+
         fetchOrders();
-
-
       } else {
-       
-        const errorMessage = response.data.message || "Order placement failed. Please try again.";
-        setError(errorMessage); 
-        console.error("Order placement failed:", response.data);
-        toast.error("Order placement failed: " + errorMessage); 
-
+        throw new Error(res.data.message || "Order failed");
       }
     } catch (err) {
-       // --- Handle network or request errors ---
-       const errorMessage = err.response?.data?.message || "An error occurred while placing the order. Please try again.";
-       setError(errorMessage); // Show error below the form
-       console.error("Order submission error:", err);
-       toast.error("Order placement failed: " + errorMessage);
+      const message = err.response?.data?.message || err.message || "Error placing order";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
-     
     }
   };
 
+
   return (
     <>
-       
-
       <div className={`${bgColor} rounded-xl border ${borderColor} p-4 md:p-6 sticky top-4 md:top-6`}>
         {/* Buy/Sell tabs */}
         <div className="flex mb-4 md:mb-6 border-b border-gray-200 dark:border-gray-700">
@@ -228,10 +146,10 @@ export default function BuySellPanel({ stockName, theme}) {
             className={`flex-1 py-2 text-center font-medium transition-colors ${
               activeTab === "buy"
                 ? `${primaryColor} border-b-2 ${primaryBorder}`
-                : `${mutedTextColor} ${hoverBgColor} border-b border-transparent` // Added border-b-transparent for consistency
+                : `${mutedTextColor} ${hoverBgColor} border-b border-transparent`
             }`}
             onClick={() => setActiveTab("buy")}
-            disabled={isSubmitting} // Prevent clicking while submitting
+            disabled={isSubmitting}
           >
             Buy
           </button>
@@ -239,18 +157,17 @@ export default function BuySellPanel({ stockName, theme}) {
             className={`flex-1 py-2 text-center font-medium transition-colors ${
               activeTab === "sell"
                 ? "text-red-500 border-b-2 border-red-500"
-                : `${mutedTextColor} ${hoverBgColor} border-b border-transparent` // Added border-b-transparent
+                : `${mutedTextColor} ${hoverBgColor} border-b border-transparent`
             }`}
             onClick={() => setActiveTab("sell")}
-             disabled={isSubmitting} // Prevent clicking while submitting
+            disabled={isSubmitting}
           >
             Sell
           </button>
         </div>
 
         {/* Order form */}
-        <form onSubmit={handleSubmitOrder} className="space-y-3 md:space-y-4"> {/* Use a form element */}
-
+        <form onSubmit={handleSubmitOrder} className="space-y-3 md:space-y-4">
           {/* Order type */}
           <div>
             <label className={`block mb-1 md:mb-2 text-xs md:text-sm font-medium ${mutedTextColor}`}>
@@ -258,26 +175,26 @@ export default function BuySellPanel({ stockName, theme}) {
             </label>
             <div className="flex gap-2">
               <button
-                type="button" // Important: Prevent button inside form from submitting it
+                type="button"
                 className={`flex-1 py-1 md:py-2 px-2 md:px-3 text-center text-xs md:text-sm font-medium rounded-lg border transition-colors ${
                   orderType === "market"
                     ? `${primaryBg} text-white border-transparent`
-                    : `${secondaryBg} ${borderColor} ${mutedTextColor} hover:border-gray-400` // Improved inactive style
+                    : `${secondaryBg} ${borderColor} ${mutedTextColor} hover:border-gray-400`
                 }`}
                 onClick={() => setOrderType("market")}
-                 disabled={isSubmitting}
+                disabled={isSubmitting}
               >
                 Market
               </button>
               <button
-                 type="button" // Important: Prevent button inside form from submitting it
+                type="button"
                 className={`flex-1 py-1 md:py-2 px-2 md:px-3 text-center text-xs md:text-sm font-medium rounded-lg border transition-colors ${
                   orderType === "limit"
                     ? `${primaryBg} text-white border-transparent`
-                    : `${secondaryBg} ${borderColor} ${mutedTextColor} hover:border-gray-400` // Improved inactive style
+                    : `${secondaryBg} ${borderColor} ${mutedTextColor} hover:border-gray-400`
                 }`}
                 onClick={() => setOrderType("limit")}
-                 disabled={isSubmitting}
+                disabled={isSubmitting}
               >
                 Limit
               </button>
@@ -292,7 +209,7 @@ export default function BuySellPanel({ stockName, theme}) {
               </label>
               <span className={`text-xs ${mutedTextColor}`}>
                 {activeTab === "buy" ? (
-                   `Balance: ₹${parseFloat(balance)?.toFixed(2) || '0.00'}`
+                  `Balance: ₹${parseFloat(balance)?.toFixed(2) || '0.00'}`
                 ) : (
                   `Available: ${currentHoldingQuantity || 0} shares`
                 )}
@@ -302,22 +219,21 @@ export default function BuySellPanel({ stockName, theme}) {
               <input
                 type="number"
                 id="quantity"
-                value={quantity} // Use the state directly (can be empty string)
-                onChange={handleQuantityChange}
+                value={quantity}
+                onChange={(e)=> setQuantity(e.target.value)}
                 min="1"
-                 // Disable input when submitting
                 className={`block w-full p-2 md:p-3 text-xs md:text-sm rounded-lg ${inputBgColor} border ${borderColor} focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none ${isSubmitting ? 'cursor-not-allowed' : ''}`}
                 disabled={isSubmitting}
-                // Note: input type="number" min/max are visual hints, validation useEffect is the source of truth
               />
             </div>
-           
-             {(parsedQuantity <= 0 && quantity !== '') && ( // Show error if 0 or less, but not if input is empty
-                 <p className="text-red-500 text-xs mt-1">
-                   Quantity must be a positive integer.
-                 </p>
-             )}
-            {activeTab === "sell" && parsedQuantity > 0 && parsedQuantity > (currentHoldingQuantity || 0) && (
+            
+            {(parsedQuantity <= 0 && quantity !== '') && (
+              <p className="text-red-500 text-xs mt-1">
+                Quantity must be a positive integer.
+              </p>
+            )}
+            
+            {activeTab === "sell" && parsedQuantity > currentHoldingQuantity && (
               <p className="text-red-500 text-xs mt-1">
                 You only own {currentHoldingQuantity || 0} shares.
               </p>
@@ -337,35 +253,24 @@ export default function BuySellPanel({ stockName, theme}) {
                 <input
                   type="number"
                   id="limitPrice"
-                  value={limitPrice} // Use the state directly (can be empty string)
-                  onChange={handleLimitPriceChange}
+                  value={limitPrice}
+                  onChange={(e) => setLimitPrice(e.target.value)}
                   className={`block w-full p-2 md:p-3 pl-8 md:pl-10 text-xs md:text-sm rounded-lg ${inputBgColor} border ${borderColor} focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none ${isSubmitting ? 'cursor-not-allowed' : ''}`}
                   disabled={isSubmitting}
                   step="0.01"
                 />
               </div>
-               {/* Display validation messages for limit price */}
-               {orderType === "limit" && (
-                  // Check against parsedLimitPrice for validation display logic
-                  (parsedLimitPrice <= 0 && limitPrice !== '') ? ( // Show error if 0 or less, but not if input is empty
-                    <p className="text-red-500 text-xs mt-1">
-                      Please enter a valid limit price.
-                    </p>
-                  ) : (currentPrice > 0 && activeTab === "buy" && parsedLimitPrice > 0 && parsedLimitPrice < currentPrice * 0.9) ? ( // Only show range check if limit price is positive
-                    <p className="text-red-500 text-xs mt-1">
-                      Must be ≥ ₹{(currentPrice * 0.9).toFixed(2)}
-                    </p>
-                  ) : (currentPrice > 0 && activeTab === "sell" && parsedLimitPrice > currentPrice * 1.1) ? ( // Only show range check if limit price is positive
-                    <p className="text-red-500 text-xs mt-1">
-                      Must be ≤ ₹{(currentPrice * 1.1).toFixed(2)}
-                    </p>
-                  ) : null
-                )}
+
+              {parsedLimitPrice <= 0 && limitPrice !== '' && (
+                <p className="text-red-500 text-xs mt-1">
+                  Please enter a valid limit price.
+                </p>
+              )}
             </div>
           )}
 
           {/* Market price info */}
-          {orderType === "market" && (currentPrice > 0 ? (
+          {orderType === "market" && (
             <div className={`flex items-start gap-2 p-2 md:p-3 rounded-lg ${inputBgColor} ${mutedTextColor} text-xs md:text-sm`}>
               <Info className="h-3 md:h-4 w-3 md:w-4 mt-0.5 flex-shrink-0" />
               <div>
@@ -373,43 +278,32 @@ export default function BuySellPanel({ stockName, theme}) {
                 {currentPrice.toFixed(2)}
               </div>
             </div>
-          ) : ( // Show loading/error state if market price isn't available
-              <div className={`flex items-start gap-2 p-2 md:p-3 rounded-lg ${inputBgColor} ${mutedTextColor} text-xs md:text-sm`}>
-                 <Info className="h-3 md:h-4 w-3 md:w-4 mt-0.5 flex-shrink-0" />
-                 <div>Waiting for real-time price data...</div>
-              </div>
-          ))}
+          )}
 
-           {/* API Error message display */}
-           {error && (
-               <div className="text-red-500 text-sm mt-2">{error}</div>
-           )}
+          {/* Error message */}
+          {error && (
+            <div className="text-red-500 text-sm mt-2">{error}</div>
+          )}
 
           {/* Order summary */}
           <div className={`p-3 md:p-4 rounded-lg ${inputBgColor} space-y-1 md:space-y-2 text-xs md:text-sm`}>
             <div className="flex justify-between">
               <span className={mutedTextColor}>Estimated {activeTab === "buy" ? "cost" : "credit"}</span>
-              {/* Only show cost if totalCost is a valid positive number and quantity is valid */}
-              {(totalCost > 0 && !isNaN(totalCost) && parsedQuantity > 0) ? (
-                 <span className="font-medium">₹{totalCost.toFixed(2)}</span>
-              ) : (
-                 <span className="font-medium text-gray-500">---</span>
-              )}
+              <span className="font-medium">
+                {(totalCost > 0 && !isNaN(totalCost) ? `₹${totalCost.toFixed(2)}` : '0')}
+              </span>
             </div>
-             {/* Optional: Show available balance */}
-             {activeTab === "buy" && (
-                 <div className="flex justify-between">
-                      <span className={mutedTextColor}>Available Balance</span>
-                      {/* Safely display balance */}
-                      <span className="font-medium">₹{parseFloat(balance)?.toFixed(2) || '0.00'}</span>
-                 </div>
-             )}
+            {activeTab === "buy" && (
+              <div className="flex justify-between">
+                <span className={mutedTextColor}>Available Balance</span>
+                <span className="font-medium">₹{parseFloat(balance)?.toFixed(2) || '0.00'}</span>
+              </div>
+            )}
           </div>
-
 
           {/* Submit button */}
           <button
-            type="submit" 
+            type="submit"
             disabled={isSubmitDisabled || isSubmitting}
             className={`w-full py-2 md:py-3 px-4 rounded-lg font-medium text-sm md:text-base transition-colors ${
               activeTab === "buy"
@@ -417,7 +311,9 @@ export default function BuySellPanel({ stockName, theme}) {
                 : `bg-red-500 text-white hover:bg-red-600`
             } ${(isSubmitDisabled || isSubmitting) ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {isSubmitting ? "Processing..." : `${activeTab === "buy" ? "Buy" : "Sell"} ${stockName}`}
+            {isSubmitting 
+              ? "Processing..." 
+              : `${isEditMode ? 'Update' : activeTab === "buy" ? "Buy" : "Sell"} ${stockName}`}
           </button>
         </form>
 

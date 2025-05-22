@@ -22,7 +22,9 @@ const useStockStore = create((set, get) => ({
     const prevStock = get().stocks[symbol];
     const newPrice = parseFloat(updateData.price) || 0;
 
-    if (!prevStock || prevStock.price !== newPrice) {
+    const priceChanged = !prevStock || Math.abs((prevStock.price || 0) - newPrice) > 0.001;
+
+    if (priceChanged) {
       set((state) => {
         const updatedStocks = { ...state.stocks };
         updatedStocks[symbol] = {
@@ -43,7 +45,6 @@ const useStockStore = create((set, get) => ({
 
     if (connectionStatus === 'connected' || connectionStatus === 'connecting') return;
 
-    // Clear existing timers and subscriptions
     if (reconnectTimer) {
       clearTimeout(reconnectTimer);
       set({ reconnectTimer: null });
@@ -58,14 +59,11 @@ const useStockStore = create((set, get) => ({
 
     const sse$ = new Observable((observer) => {
       const source = new EventSource("http://localhost:3000/api/user/sendData", { withCredentials: true });
-      const stockStore = get();
-      const userStore = useUserStore.getState();
-      const orderStore = useOrderStore.getState();
 
       // Event handlers
       const onOpen = () => {
         console.log("✅ SSE Connected");
-        set({
+        useStockStore.setState({
           connectionStatus: 'connected',
           reconnectDelay: 1000,
           error: null,
@@ -74,13 +72,11 @@ const useStockStore = create((set, get) => ({
 
       const onOrderUpdate = (e) => {
         try {
-         
           const data = JSON.parse(e.data);
-         
-          stockStore.setOrderUpdates(data);
-          userStore.getUserHoldings();
-          userStore.fetchUserData();
-          orderStore.fetchOrders();
+          useStockStore.getState().setOrderUpdates(data);
+          useUserStore.getState().getUserHoldings();
+          useUserStore.getState().fetchUserData();
+          useOrderStore.getState().fetchOrders();
         } catch (err) {
           console.error("Failed to parse orderUpdate event:", err);
         }
@@ -93,7 +89,7 @@ const useStockStore = create((set, get) => ({
             console.warn("Invalid stock update:", update);
             return;
           }
-          stockStore.updateStock(update);
+          useStockStore.getState().updateStock(update);
         } catch (err) {
           console.error("SSE Data Parsing Error:", err);
         }
@@ -126,17 +122,16 @@ const useStockStore = create((set, get) => ({
         console.log(`⏳ Reconnecting in ${get().reconnectDelay / 1000}s...`);
         const currentDelay = get().reconnectDelay;
         const nextDelay = Math.min(currentDelay * 2, get().maxReconnectDelay);
-        
+
         set({
           connectionStatus: 'disconnected',
           error: 'Connection lost. Reconnecting...',
           reconnectDelay: nextDelay,
         });
 
-        // Schedule reconnect
         const timer = setTimeout(() => get().connectToSSE(), currentDelay);
         set({ reconnectTimer: timer });
-        
+
         return EMPTY;
       })
     ).subscribe();
@@ -159,7 +154,7 @@ const useStockStore = create((set, get) => ({
       connectionStatus: 'disconnected',
       error: null,
     });
-  }
+  },
 }));
 
 export default useStockStore;

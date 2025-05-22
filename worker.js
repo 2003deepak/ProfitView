@@ -1,4 +1,4 @@
-require("dotenv").config({path: "./backend/.env"});
+require("dotenv").config({ path: "./backend/.env" });
 const { Worker } = require("bullmq");
 const redis = require("./backend/config/redis");
 const orderModel = require("./backend/models/order");
@@ -6,18 +6,11 @@ const userModel = require("./backend/models/user");
 const holdingModel = require("./backend/models/holding");
 const db = require("./backend/config/mongoose-connection");
 
-// Create Redis publisher instance
 const redisPublisher = redis.duplicate();
-
-// Track active subscribers to avoid duplicates
 const activeSubscribers = new Map();
 
-
 function isMarketOpen() {
-    if (process.env.SIMULATION_MODE === "true") {
-        return true; // No time restriction in simulation mode
-    }
-
+    if (process.env.SIMULATION_MODE === "true") return true;
     const now = new Date();
     const open = new Date(now);
     open.setHours(9, 30, 0, 0);
@@ -26,87 +19,99 @@ function isMarketOpen() {
     return now >= open && now <= close;
 }
 
+// 🧹 Cleanup helper
+async function cleanupStockSubscription(stockName) {
+    const subscriber = activeSubscribers.get(stockName);
+    if (subscriber) {
+        try {
+            await subscriber.unsubscribe(`price-updates:${stockName}`);
+            await subscriber.quit();
+        } catch (e) {
+            console.error(`🔴 Failed to unsubscribe ${stockName}:`, e);
+        }
+        activeSubscribers.delete(stockName);
+        console.log(`🧹 Cleaned up subscription for ${stockName}`);
+    }
+}
+
 async function executeOrder(order, user, currentPrice) {
-  const stockName = order.stockName;
-  const executionCost = currentPrice * order.quantity;
+    const freshOrder = await orderModel.findById(order._id);
+    if (!freshOrder || freshOrder.status !== "OPEN") {
+        console.log(`🚫 Skipping execution of deleted/closed order ${order._id}`);
+        return;
+    }
 
-  // Log order confirmation
-  console.log(`📝 Order ${order._id} (${order.action})`);
-  console.log(`📌 Ordered: ₹${order.targetPrice} | 💹 Current: ₹${currentPrice}`);
+    const stockName = order.stockName;
+    const executionCost = currentPrice * order.quantity;
 
-  order.executedPrice = currentPrice;
-  order.status = "CLOSED";
+    console.log(`📝 Order ${order._id} (${order.action})`);
+    console.log(`📌 Ordered: ₹${order.targetPrice} | 💹 Current: ₹${currentPrice}`);
 
-  let userHolding = await holdingModel.findOne({ user: user._id });
+    order.executedPrice = currentPrice;
+    order.status = "CLOSED";
 
-  if (!userHolding) {
-      userHolding = new holdingModel({ user: user._id, holdings: [] });
-  }
+    let userHolding = await holdingModel.findOne({ user: user._id }) || new holdingModel({ user: user._id, holdings: [] });
 
-  if (order.action === "BUY") {
-      const reservedCost = order.targetPrice * order.quantity;
-      const refund = reservedCost - executionCost;
+    if (order.action === "BUY") {
+        const reservedCost = order.targetPrice * order.quantity;
+        const refund = reservedCost - executionCost;
 
-      user.reservedAmount -= reservedCost;
-      user.balance += refund;
+        user.reservedAmount -= reservedCost;
+        user.balance += refund;
 
-      const existingStock = userHolding.holdings.find(h => h.stock_name === stockName);
-      if (existingStock) {
-          const totalQty = existingStock.quantity + order.quantity;
-          const totalInvest = (existingStock.average_price * existingStock.quantity) + executionCost;
-          existingStock.quantity = totalQty;
-          existingStock.average_price = totalInvest / totalQty;
-      } else {
-          userHolding.holdings.push({
-              stock_name: stockName,
-              quantity: order.quantity,
-              average_price: currentPrice
-          });
-      }
-  } else if (order.action === "SELL") {
-      user.balance += executionCost;
+        const existingStock = userHolding.holdings.find(h => h.stock_name === stockName);
+        if (existingStock) {
+            const totalQty = existingStock.quantity + order.quantity;
+            const totalInvest = (existingStock.average_price * existingStock.quantity) + executionCost;
+            existingStock.quantity = totalQty;
+            existingStock.average_price = totalInvest / totalQty;
+        } else {
+            userHolding.holdings.push({ stock_name: stockName, quantity: order.quantity, average_price: currentPrice });
+        }
+    } else if (order.action === "SELL") {
+        user.balance += executionCost;
+        const stock = userHolding.holdings.find(h => h.stock_name === stockName);
+        if (stock) {
+            stock.quantity -= order.quantity;
+            if (stock.quantity <= 0) {
+                userHolding.holdings = userHolding.holdings.filter(h => h.stock_name !== stockName);
+            }
+        }
+    }
 
-      const stock = userHolding.holdings.find(h => h.stock_name === stockName);
-      if (stock) {
-          stock.quantity -= order.quantity;
-          if (stock.quantity <= 0) {
-              userHolding.holdings = userHolding.holdings.filter(h => h.stock_name !== stockName);
-          }
-      }
-  }
+    await Promise.all([order.save(), user.save(), userHolding.save()]);
 
-  await Promise.all([
-      order.save(),
-      user.save(),
-      userHolding.save()
-  ]);
+    try {
+        await redisPublisher.publish('order-updates', JSON.stringify({
+            userId: user._id.toString(),
+            updateType: "Order Executed",
+            status: "success",
+            orderId: order._id.toString(),
+            stockName,
+            action: order.action,
+            quantity: order.quantity,
+            executedPrice: currentPrice,
+            timestamp: new Date().toISOString()
+        }));
+        console.log('📡 Published order execution');
+    } catch (err) {
+        console.error('📡 Redis publish error:', err);
+    }
 
-  try {
-      await redisPublisher.publish('order-updates', JSON.stringify({
-          userId: user._id.toString(),
-          updateType: "Order Executed",
-          status: "success",
-          orderId: order._id.toString(),
-          stockName,
-          action: order.action,
-          quantity: order.quantity,
-          executedPrice: currentPrice,
-          timestamp: new Date().toISOString()
-      }));
-      console.log('📡 Published order execution');
-  } catch (err) {
-      console.error('📡 Redis publish error:', err);
-  }
+    await Promise.all([
+        redis.del(`holding:${user._id}`),
+        redis.del(`user:${user._id}:portfolio`),
+        redis.del(`userOrders:${user._id}`),
+        redis.del(`order:active:${order._id}`),
+        redis.lrem("pendingOrders", 0, order._id.toString())
+    ]);
 
-  await Promise.all([
-      redis.del(`holding:${user._id}`),
-      redis.del(`user:${user._id}:portfolio`),
-      redis.del(`userOrders:${user._id}`),
-      redis.del(`order:active:${order._id}`),
-      redis.lrem("pendingOrders", 0, order._id.toString())
-  ]);
+    console.log(`✅ Executed ${order.action} @ ₹${currentPrice}`);
 
-  console.log(`✅ Executed ${order.action} @ ₹${currentPrice}`);
+    const openOrders = await orderModel.exists({ stockName, status: "OPEN" });
+    if (!openOrders) {
+        await cleanupStockSubscription(stockName);
+    }
 }
 
 async function handleFailedOrder(order, user) {
@@ -133,6 +138,11 @@ async function handleFailedOrder(order, user) {
         redis.del(`order:active:${order._id}`),
         redis.lrem("pendingOrders", 0, order._id.toString())
     ]);
+
+    const openOrders = await orderModel.exists({ stockName: order.stockName, status: "OPEN" });
+    if (!openOrders) {
+        await cleanupStockSubscription(order.stockName);
+    }
 }
 
 const orderWorker = new Worker("orderQueue", async (job) => {
@@ -140,7 +150,14 @@ const orderWorker = new Worker("orderQueue", async (job) => {
     let priceSubscriber = null;
 
     try {
-        // Check if order is already being processed
+        console.log(`👷 Worker picked job: ${orderId}`);
+
+        const isDeleted = await redis.get(`order:deleted:${orderId}`);
+        if (isDeleted) {
+            console.log(`⚠️ Skipping deleted order ${orderId}`);
+            return;
+        }
+
         const isActive = await redis.get(`order:active:${orderId}`);
         if (isActive) {
             console.log(`ℹ️ Order ${orderId} already being processed`);
@@ -148,10 +165,11 @@ const orderWorker = new Worker("orderQueue", async (job) => {
         }
 
         await redis.set(`order:active:${orderId}`, "true", "EX", 300);
-        console.log("📥 Processing order:", orderId);
+        console.log(`🔄 Currently processing order: ${orderId}`);
 
         const order = await orderModel.findById(orderId);
         if (!order || order.status === "CLOSED") {
+            console.log(`❌ Order ${orderId} not found or already closed`);
             await redis.del(`order:active:${orderId}`);
             return;
         }
@@ -163,12 +181,7 @@ const orderWorker = new Worker("orderQueue", async (job) => {
             return;
         }
 
-        user.reservedAmount = Number(user.reservedAmount);
-        user.balance = Number(user.balance);
-
         const stockName = order.stockName;
-
-        // 1. First check current price immediately
         const priceDataStr = await redis.get(`livePrice:${stockName}`);
         const currentPrice = priceDataStr ? JSON.parse(priceDataStr).price : null;
 
@@ -178,32 +191,36 @@ const orderWorker = new Worker("orderQueue", async (job) => {
                 : currentPrice >= order.targetPrice;
 
             if (shouldExecute) {
+                console.log(`✅ Executing order ${orderId} immediately at ₹${currentPrice}`);
                 await executeOrder(order, user, currentPrice);
                 return;
+            } else {
+                console.log(`⌛ Order ${orderId} not executable yet (target: ₹${order.targetPrice}, current: ₹${currentPrice})`);
             }
+        } else {
+            console.log(`📉 No price data for ${stockName}. Waiting for updates...`);
         }
 
-        // 2. If not executed immediately and market is closed, fail the order
         if (!isMarketOpen()) {
+            console.log(`🕒 Market closed. Marking order ${orderId} as failed.`);
             await handleFailedOrder(order, user);
-            console.log(`🕒 Market closed - order ${orderId} failed`);
             return;
         }
 
-        // 3. Set up price subscription for this specific stock
-        // Check if we already have a subscriber for this stock
+        console.log(`🛑 No immediate action for order ${orderId}. Subscribing for future updates.`);
+
         if (!activeSubscribers.has(stockName)) {
             priceSubscriber = redis.duplicate();
             activeSubscribers.set(stockName, priceSubscriber);
-            
+
             priceSubscriber.on('message', async (channel, message) => {
                 if (channel !== `price-updates:${stockName}`) return;
 
                 try {
                     const priceData = JSON.parse(message);
                     const currentPrice = priceData.price;
+                    // console.log(`📡 Received price update for ${stockName}: ₹${currentPrice}`);
 
-                    // Get all active orders for this stock
                     const activeOrders = await orderModel.find({
                         stockName,
                         status: "OPEN",
@@ -214,8 +231,12 @@ const orderWorker = new Worker("orderQueue", async (job) => {
                     });
 
                     for (const activeOrder of activeOrders) {
+                        const exists = await orderModel.exists({ _id: activeOrder._id });
+                        if (!exists) continue;
+
                         const orderUser = await userModel.findById(activeOrder.user);
                         if (orderUser) {
+                            console.log(`🚀 Executing triggered order ${activeOrder._id} at ₹${currentPrice}`);
                             await executeOrder(activeOrder, orderUser, currentPrice);
                         }
                     }
@@ -228,16 +249,14 @@ const orderWorker = new Worker("orderQueue", async (job) => {
             console.log(`👂 Subscribed to price updates for ${stockName}`);
         }
 
-        // 4. Add order to watch list
         await redis.lpush(`watchlist:${stockName}`, orderId);
-        console.log(`👀 Added order ${orderId} to watchlist for ${stockName}`);
+        console.log(`👀 Added order ${orderId} to ${stockName}'s watchlist`);
 
-        // 5. Set timeout for order execution (30 minutes)
         setTimeout(async () => {
             const orderStillOpen = await orderModel.findOne({ _id: orderId, status: "OPEN" });
             if (orderStillOpen) {
+                console.log(`⏰ Order ${orderId} timed out after 30 mins`);
                 await handleFailedOrder(orderStillOpen, user);
-                console.log(`⏰ Order ${orderId} timed out`);
             }
         }, 1800000); // 30 minutes
 
@@ -254,6 +273,5 @@ const orderWorker = new Worker("orderQueue", async (job) => {
         duration: 1000
     }
 });
-
 
 console.log("⚡ Order execution worker ready");

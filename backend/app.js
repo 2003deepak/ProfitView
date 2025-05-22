@@ -25,6 +25,7 @@ app.use(cors({
 // Routes Import 
 const indexRouter = require('./routes/indexRouter');
 const userRouter = require('./routes/userRouter');
+const orderRouter = require('./routes/orderRouter');
 
 // Setting Up Middlewares
 app.use(express.json());
@@ -36,6 +37,7 @@ app.use(morgan('dev'));
 // Routes Setup
 app.use("/api", indexRouter);
 app.use("/api/user", userRouter);
+app.use("/api/user/order", orderRouter);
 
 const PORT = process.env.PORT || 3000;
 

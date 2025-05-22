@@ -17,7 +17,7 @@ export const useOrderStore = create(
       fetchOrders: async () => {
         set({ loading: true, error: null });
         try {
-          const res = await axios.get('http://localhost:3000/api/user/getOrders', {
+          const res = await axios.get('http://localhost:3000/api/user/order/getOrders', {
             withCredentials: true,
           });
 
@@ -44,7 +44,7 @@ export const useOrderStore = create(
     }),
     {
       name: 'order-storage', // Key for localStorage
-      // Optional: You can add a partialize function to control what gets persisted
+      
       partialize: (state) => ({ 
         orders: state.orders 
       }),

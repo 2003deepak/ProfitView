@@ -8,12 +8,15 @@ import { ArrowDown, ArrowUp, Clock, CheckCircle2, AlertCircle, ShoppingCart, Cal
 import { useNavigate } from "react-router";
 import useOrderStore from "../store/orderStore";
 import useStockStore from "../store/stockStore";
+import {toast} from "react-toastify";
+import axios from "axios";
 
 const Order = () => {
   const { theme } = themeStore((state) => state);
   const [activeTab, setActiveTab] = useState("open");
   const navigate = useNavigate();
   const { stocks } = useStockStore();
+  const { fetchUserData, getUserHoldings } = useUserStore();
 
 
 
@@ -141,7 +144,8 @@ const Order = () => {
           action: order.type.toLowerCase(),
           quantity: order.quantity,
           targetPrice: order.targetPrice,
-          isMarketOrder: order.isMarketOrder
+          isMarketOrder: order.isMarketOrder,
+          orderId : order._id
         }
       }
     });
@@ -150,19 +154,23 @@ const Order = () => {
   // Handle delete order
   const handleDeleteOrder = async (orderId) => {
     try {
-      const response = await axios.delete(
-        `http://localhost:3000/api/user/orders/${orderId}`,
+      const response = await axios.post(
+        `http://localhost:3000/api/user/order/deleteOrder`,
+        {orderId},
         { withCredentials: true }
       );
 
       if (response.data.status === "success") {
-        toast.success("Order deleted successfully");
-        fetchOrders(); // Refresh orders list
+        // toast.success("Order deleted successfully");
+        fetchOrders();
+        fetchUserData();
+        getUserHoldings();
+
       } else {
         toast.error(response.data.message || "Failed to delete order");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "An error occurred while deleting the order");
+      toast.error( "An error occurred while deleting the order" + error);
     }
   };
 

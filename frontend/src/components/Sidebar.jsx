@@ -33,7 +33,15 @@ const Sidebar = () => {
   const { setLogOut } = useAuthStore();
   const { theme, changeTheme, isSidebarOpen, changeSidebarOpen } = themeStore();
 
-
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const toggleSidebar = () => {
     changeSidebarOpen();
@@ -87,21 +95,21 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Mobile Overlay */}
+      {/* Mobile Overlay - using will-change for better performance */}
       {isMobile && isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden will-change-transform"
           onClick={toggleSidebar}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - using transform instead of width for smoother animation */}
       <div className={`
-        fixed h-full z-50 transition-all duration-300 ease-in-out
-        ${isSidebarOpen ? 'w-64' : 'w-20'}
+        fixed h-full z-50 transition-all duration-800
+        ${isSidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0 lg:w-20'}
         ${theme === "dark" ? "bg-gray-900" : "bg-white"}
-        ${isMobile ? (isSidebarOpen ? 'left-0' : '-left-20') : 'left-0'}
         shadow-xl
+        will-change-transform
       `}>
         {/* Header */}
         <div className={`
@@ -122,14 +130,15 @@ const Sidebar = () => {
             className={`
               p-2 rounded-lg transition-colors
               ${theme === "dark" ? "hover:bg-gray-800 text-gray-300" : "hover:bg-gray-100 text-gray-600"}
+              focus:outline-none
             `}
           >
             {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="p-4 space-y-1 overflow-y-auto h-[calc(100%-150px)]">
+        {/* Navigation - using overflow-hidden to prevent janky scrollbar appearance */}
+        <nav className="p-4 space-y-1 overflow-y-auto h-[calc(100%-150px)] overflow-x-hidden">
           {navigation.map((item, idx) => (
             <div key={idx}>
               {item.dropdown ? (
@@ -142,13 +151,18 @@ const Sidebar = () => {
                         (theme === "dark" ? "bg-gray-800 text-blue-400" : "bg-blue-50 text-blue-600") :
                         (theme === "dark" ? "hover:bg-gray-800 text-gray-300" : "hover:bg-gray-100 text-gray-700")}
                       ${!isSidebarOpen ? 'justify-center' : ''}
+                      focus:outline-none
                     `}
                   >
-                    <item.icon className="w-5 h-5" />
+                    <item.icon className="w-5 h-5 flex-shrink-0" />
                     {isSidebarOpen && (
                       <>
-                        <span className="ml-3 flex-1 text-left">{item.label}</span>
-                        {activeDropdown === item.label ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                        <span className="ml-3 flex-1 text-left whitespace-nowrap">{item.label}</span>
+                        {activeDropdown === item.label ? (
+                          <ChevronUp className="w-5 h-5 flex-shrink-0" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 flex-shrink-0" />
+                        )}
                       </>
                     )}
                   </button>
@@ -159,7 +173,7 @@ const Sidebar = () => {
                           key={subIdx}
                           to={subItem.to}
                           className={`
-                            block px-3 py-2 text-sm rounded-lg transition-colors
+                            block px-3 py-2 text-sm rounded-lg transition-colors whitespace-nowrap
                             ${theme === "dark" ? "hover:bg-gray-800 hover:text-blue-400 text-gray-400" : "hover:bg-gray-100 hover:text-blue-600 text-gray-600"}
                           `}
                           onClick={() => isMobile && toggleSidebar()}
@@ -174,13 +188,13 @@ const Sidebar = () => {
                 <Link
                   to={item.to}
                   className={`
-                    flex items-center w-full p-3 rounded-lg transition-colors
+                    flex items-center w-full p-3 rounded-lg transition-colors whitespace-nowrap
                     ${theme === "dark" ? "hover:bg-gray-800 text-gray-300" : "hover:bg-gray-100 text-gray-700"}
                     ${!isSidebarOpen ? 'justify-center' : ''}
                   `}
                   onClick={() => isMobile && toggleSidebar()}
                 >
-                  <item.icon className="w-5 h-5" />
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
                   {isSidebarOpen && <span className="ml-3">{item.label}</span>}
                 </Link>
               )}
@@ -196,27 +210,29 @@ const Sidebar = () => {
           <button
             onClick={() => changeTheme()}
             className={`
-              flex items-center w-full p-3 rounded-lg transition-colors
+              flex items-center w-full p-3 rounded-lg transition-colors whitespace-nowrap
               ${theme === "dark" ? "hover:bg-gray-800 text-gray-300" : "hover:bg-gray-100 text-gray-700"}
               ${!isSidebarOpen ? 'justify-center' : ''}
+              focus:outline-none
             `}
           >
             {theme === "dark" ? (
-              <Sun className="w-5 h-5 text-yellow-400" />
+              <Sun className="w-5 h-5 text-yellow-400 flex-shrink-0" />
             ) : (
-              <Moon className="w-5 h-5 text-gray-600" />
+              <Moon className="w-5 h-5 text-gray-600 flex-shrink-0" />
             )}
             {isSidebarOpen && <span className="ml-3">Toggle Theme</span>}
           </button>
           <button
             onClick={handleLogout}
             className={`
-              flex items-center w-full p-3 rounded-lg transition-colors mt-2
+              flex items-center w-full p-3 rounded-lg transition-colors mt-2 whitespace-nowrap
               ${theme === "dark" ? "text-red-400 hover:bg-red-900/20" : "text-red-600 hover:bg-red-50"}
               ${!isSidebarOpen ? 'justify-center' : ''}
+              focus:outline-none
             `}
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-5 h-5 flex-shrink-0" />
             {isSidebarOpen && <span className="ml-3">Logout</span>}
           </button>
         </div>

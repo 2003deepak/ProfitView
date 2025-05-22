@@ -36,10 +36,6 @@ const Portfolio = () => {
   const colors = ["#FF6B6B", "#4ECDC4", "#FFD166", "#06D6A0", "#118AB2", "#073B4C", "#EF476F", "#FFC43D"];
   const getRandomColor = (index) => colors[index % colors.length];
 
-  // Fetch holdings when component mounts
-  useEffect(() => {
-    getUserHoldings();
-  }, [getUserHoldings]);
 
   // Calculate portfolio metrics whenever stocks or holdings change
   useEffect(() => {
@@ -59,7 +55,7 @@ const Portfolio = () => {
       setTotalProfit(profit);
       setTotalProfitPercentage(profitPercentage);
     }
-  }, [holdings, stocks, totalInvestment]);
+  }, [stocks]);
 
   // Theme classes
   const bgColor = theme === "dark" ? "bg-gray-900" : "bg-gray-50";
