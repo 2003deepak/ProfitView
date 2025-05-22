@@ -1,33 +1,43 @@
-import React ,{ useEffect } from 'react'
-import useAuthStore from '../store/authStore'
+import React, { useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+import useAuthStore from '../store/authStore';
 import useStockStore from "../store/stockStore";
-import { Navigate } from "react-router-dom";
 import useOrderStore from '../store/orderStore';
 import useUserStore from '../store/userStore';
 
-const ProtectedRoute = ({children}) => {
+const ProtectedRoute = ({ children }) => {
+  const { isLoggedIn } = useAuthStore((state) => state);
+  const { connectToSSE, disconnectSSE, orderUpdates, setOrderUpdates } = useStockStore();
+  const { fetchOrders } = useOrderStore();
+  const { fetchUserData, getUserHoldings } = useUserStore();
 
-    const {isLoggedIn} = useAuthStore((state) => state)
-    const {connectToSSE,disconnectSSE} = useStockStore();
-    const {fetchOrders} = useOrderStore();
-    const {fetchUserData,getUserHoldings} = useUserStore();
+  useEffect(() => {
+    connectToSSE();
+    fetchOrders();
+    fetchUserData();
+    getUserHoldings();
 
-    useEffect(() => {
-        connectToSSE();
-        fetchOrders();
-        fetchUserData();
-        getUserHoldings();
-    
-        return () => {
-            disconnectSSE();
-        };
-    }, []);
-    
+    return () => {
+      disconnectSSE();
+    };
+  }, []);
+
+
+  
+  if (!isLoggedIn) {
+    return <Navigate to="/login" />;
+  }
+
   return (
     <>
-      {isLoggedIn ? children : <Navigate to = '/login'/>}
+      {children}
+  
+      
     </>
-  )
-}
+  );
+};
 
-export default ProtectedRoute
+export default ProtectedRoute;

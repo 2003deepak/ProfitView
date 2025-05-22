@@ -4,7 +4,7 @@ import TopSearchBar from "../components/TopSearchBar";
 import themeStore from "../store/themeStore";
 import useUserStore from "../store/userStore";
 import DashboardHeader from "../components/DashboardHeader";
-import { ArrowDown, ArrowUp, Clock, CheckCircle2, AlertCircle, ShoppingCart, CalendarClock } from "lucide-react";
+import { ArrowDown, ArrowUp, Clock, CheckCircle2, AlertCircle, ShoppingCart, CalendarClock , Edit, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router";
 import useOrderStore from "../store/orderStore";
 import useStockStore from "../store/stockStore";
@@ -14,6 +14,8 @@ const Order = () => {
   const [activeTab, setActiveTab] = useState("open");
   const navigate = useNavigate();
   const { stocks } = useStockStore();
+
+
 
   // Get data and methods from order store
   const {
@@ -129,6 +131,40 @@ const Order = () => {
   const openOrdersCount = openOrders?.length || 0;
   const executedOrdersCount = executedOrders?.length || 0;
   const todaysOrdersCount = todaysOrders?.length || 0;
+
+
+   // Handle edit order
+   const handleEditOrder = (order) => {
+    navigate(`/user/stock/${order.stock_name}`, {
+      state: {
+        prefilledData: {
+          action: order.type.toLowerCase(),
+          quantity: order.quantity,
+          targetPrice: order.targetPrice,
+          isMarketOrder: order.isMarketOrder
+        }
+      }
+    });
+  };
+
+  // Handle delete order
+  const handleDeleteOrder = async (orderId) => {
+    try {
+      const response = await axios.delete(
+        `http://localhost:3000/api/user/orders/${orderId}`,
+        { withCredentials: true }
+      );
+
+      if (response.data.status === "success") {
+        toast.success("Order deleted successfully");
+        fetchOrders(); // Refresh orders list
+      } else {
+        toast.error(response.data.message || "Failed to delete order");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "An error occurred while deleting the order");
+    }
+  };
 
   if (loading) {
     return (
@@ -340,6 +376,33 @@ const Order = () => {
                                 </div>
                               </>
                             )}
+
+
+                             {/* Edit and Delete buttons (only for open orders) */}
+                          {activeTab === "open" && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditOrder(order);
+                                }}
+                                className={`p-2 rounded-lg ${hoverBg} text-blue-500`}
+                                title="Edit order"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteOrder(order.id);
+                                }}
+                                className={`p-2 rounded-lg ${hoverBg} text-red-500`}
+                                title="Delete order"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          )}
 
                             <div className="min-w-[100px]">
                               <p className={`text-xs ${secondaryTextColor}`}>Status</p>

@@ -12,17 +12,25 @@ const StockDetail = () => {
   const { theme } = themeStore(state => state);
   const { symbol } = useParams();
 
-  // Select specific stock data from the store
   const liveStockData = useStockStore(state => state.stocks[symbol]);
-
-  // Local state for selected timeframe
   const [selectedTimeframe, setSelectedTimeframe] = useState("1D");
-
-  // Local state for mock fundamentals (should update only when symbol changes)
-  const [fundamentals, setFundamentals] = useState(null);
-
-  // Loading state - true initially, true when symbol changes, false when live data arrives
+  // const [fundamentals, setFundamentals] = useState();
   const [isLoading, setIsLoading] = useState(true);
+
+  const fundamentals = {
+    open: 10,
+    high: 10,
+    low: 10,
+    volume: `10M`,
+    marketCap: `100Cr`,
+    peRatio: 10.2,
+    dividendYield: `2%`,
+    eps: 520.36,
+    beta: 10,
+    yearHigh: 800520,
+    yearLow: 704500,
+    avgVolume: '10M',
+  };
 
 
   // Effect 1: Handle symbol change and initial data availability
@@ -31,23 +39,11 @@ const StockDetail = () => {
 
       // Check if the live data for the new symbol is available in the store immediately
       if (liveStockData) {
-          // Data is available, set loading to false
+          
           setIsLoading(false);
 
-          // Generate fundamentals ONLY when liveStockData for the current symbol is found
-          // This runs on mount for the initial symbol, and whenever symbol changes
-          // *and* data is available. This ensures fundamentals are generated once *per stock*.
-          const mockFundamentals = { /* ... generate mock data using liveStockData.price ... */ };
-          setFundamentals(mockFundamentals);
-
-      } else {
-         // Data not immediately available for the new symbol.
-         // Stay in loading state. The useEffect below will handle when it arrives.
-         setFundamentals(null); // Clear old fundamentals if symbol changes and data is not ready
-         // TODO: Consider a timeout here to show "not found" if data never arrives.
-      }
-
-  }, [symbol, liveStockData]); // Depend on symbol to reset state, depend on liveStockData to know when data arrives
+      } 
+  }, [symbol, liveStockData]); 
 
 
   // Theme classes (kept for clarity)
@@ -63,76 +59,10 @@ const inactiveButtonBg = theme === "dark" ? "bg-gray-700" : "bg-gray-100";
   
 
   useEffect(() => {
-      // Reset state when symbol changes
       setIsLoading(true);
-      setFundamentals(null); // Clear old fundamentals
+     
+  }, [symbol]);
 
-      // Wait for liveStockData to become available for the new symbol
-      // The component will re-render when liveStockData changes.
-  }, [symbol]); // Only react when the symbol changes
-
-  // Effect to handle data arrival and set fundamentals *only once*
-  useEffect(() => {
-      if (liveStockData && fundamentals === null) { // Check if live data is here AND fundamentals haven't been set for THIS symbol yet
-          setIsLoading(false); // Data arrived, stop loading
-
-           // Generate mock fundamental data using liveStockData.price
-           const mockFundamentals = {
-             open: (liveStockData.price || 0) * (1 + (Math.random() * 0.02 - 0.01)),
-             high: (liveStockData.price || 0) * (1 + Math.random() * 0.03),
-             low: (liveStockData.price || 0) * (1 - Math.random() * 0.03),
-             volume: `${(Math.random() * 50 + 5).toFixed(1)}M`,
-             marketCap: `${((liveStockData.price || 0) * (Math.random() * 10 + 1) / 1000).toFixed(2)}T`,
-             peRatio: (Math.random() * 30 + 10).toFixed(2),
-             dividendYield: (Math.random() * 3).toFixed(2),
-             eps: (liveStockData.price && (Math.random() * 30 + 10)) ? ((liveStockData.price || 0) / (Math.random() * 30 + 10)).toFixed(2) : 'N/A',
-             beta: (Math.random() * 1.5 + 0.5).toFixed(2),
-             yearHigh: (liveStockData.price || 0) * (1 + Math.random() * 0.3),
-             yearLow: (liveStockData.price || 0) * (1 - Math.random() * 0.3),
-             avgVolume: `${(Math.random() * 20 + 40).toFixed(1)}M`
-           };
-           setFundamentals(mockFundamentals);
-      } else if (!liveStockData && !isLoading) {
-          // If live data disappears after being loaded, maybe set isLoading back to true?
-          // Or show an error message. For now, let's rely on the initial load handling.
-           // If liveStockData is null/undefined and we aren't already in a loading state
-           // This might indicate the stock was removed or an error occurred.
-           // Let's set loading to true and clear fundamentals so the loading state is shown.
-           // However, this effect runs whenever liveStockData changes, including when it becomes null.
-           // Let's refine the loading logic.
-      }
-  }, [liveStockData, fundamentals, isLoading]); // Depend on liveStockData to trigger when it arrives
-
-   // Let's consolidate the loading logic.
-   // Loading is true initially and when symbol changes.
-   // Loading becomes false *only* when liveStockData for the *current* symbol is available.
-
-   useEffect(() => {
-       // When symbol changes, reset loading state and fundamentals
-       setIsLoading(true);
-       setFundamentals(null);
-   }, [symbol]); // React only to symbol changes
-
-   useEffect(() => {
-       // When liveStockData changes *for the current symbol*
-       if (liveStockData) {
-           // Data is available! Stop loading.
-           setIsLoading(false);
-
-           // Generate fundamentals ONLY if they haven't been generated for this symbol yet.
-           // How to know if they haven't been generated for THIS symbol?
-           // We cleared them when the symbol changed in the effect above.
-           // So, if liveStockData is available and fundamentals are null, generate them.
-           if (fundamentals === null) {
-                const mockFundamentals = { /* ... generate mock data using liveStockData.price ... */ };
-                setFundamentals(mockFundamentals);
-           }
-       } else {
-           // If liveStockData becomes null/undefined, it means the data for this stock is gone.
-           // Stay in loading state, or transition to an error/not found state after a timeout.
-           // For now, let's just stay loading. The initial render will handle the !liveStockData case.
-       }
-   }, [liveStockData, symbol, fundamentals]); // Depend on symbol and fundamentals state to ensure it triggers correctly
 
 
    // Derived state for display
@@ -158,8 +88,7 @@ const inactiveButtonBg = theme === "dark" ? "bg-gray-700" : "bg-gray-100";
    }, [liveStockData]); // Only recalculate when liveStockData changes
 
 
-  // Check if data is ready to render the main content
-  // Ready if NOT loading AND we have liveStockData AND we have fundamentals
+
    const isDataReady = !isLoading && liveStockData !== null && fundamentals !== null;
 
    

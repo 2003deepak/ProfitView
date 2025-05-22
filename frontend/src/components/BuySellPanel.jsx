@@ -3,12 +3,13 @@ import { DollarSign, Info } from "lucide-react";
 import useStockStore from '../store/stockStore';
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
-import { toast } from 'react-toastify';
+import { toast , ToastContainer} from 'react-toastify';
 import useUserStore from "../store/userStore";
 import useOrderStore from "../store/orderStore";
+import { useLocation } from 'react-router-dom';
 
 
-export default function BuySellPanel({ stockName, theme }) {
+export default function BuySellPanel({ stockName, theme}) {
   const [activeTab, setActiveTab] = useState("buy"); // 'buy' or 'sell'
   const [orderType, setOrderType] = useState("market"); // 'market' or 'limit'
   const [quantity, setQuantity] = useState(''); // Use empty string initially for input clarity
@@ -17,11 +18,20 @@ export default function BuySellPanel({ stockName, theme }) {
   const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const location = useLocation();
+  const prefilledData = location.state?.prefilledData;
+
+  if(prefilledData) {
+    setActiveTab(prefilledData.action.toLowerCase());
+    setOrderType(prefilledData.isMarketOrder ? "market" : "limit");
+    setQuantity(prefilledData.quantity);
+    setLimitPrice(prefilledData.targetPrice || '');
+
+  }
+
 
   // --- Stock Store Data ---
   const currentPrice = useStockStore(state => state.stocks[stockName]?.price || 0);
-  const orderExecuted = useStockStore(state => state.orderExecuted);
-  const setOrderExecuted = useStockStore(state => state.setOrderExecuted); // Action to clear the execution state
 
   // --- User Store Data/Actions ---
   const holdings = useUserStore(state => state.holdings);
@@ -29,7 +39,6 @@ export default function BuySellPanel({ stockName, theme }) {
 
   // --- Order Store --- 
   const fetchOrders = useOrderStore(state => state.fetchOrders);
-
 
   const [error, setError] = useState(""); 
   const [currentHoldingQuantity, setCurrentHoldingQuantity] = useState(0);
@@ -45,7 +54,7 @@ export default function BuySellPanel({ stockName, theme }) {
   const primaryColor = theme === "dark" ? "text-blue-400" : "text-blue-600";
   const primaryBorder = theme === "dark" ? "border-blue-400" : "border-blue-500";
   const primaryBg = theme === "dark" ? "bg-blue-600" : "bg-blue-500";
-  const secondaryBg = theme === "dark" ? "bg-gray-700" : "bg-gray-100"; // For inactive tab/order type
+  const secondaryBg = theme === "dark" ? "bg-gray-700" : "bg-gray-100";
 
 
   // Effect to update holding quantity when tab or holdings change
@@ -53,49 +62,23 @@ export default function BuySellPanel({ stockName, theme }) {
     if (activeTab === "sell") {
       getStockQuantity(stockName);
     } else {
-      setCurrentHoldingQuantity(0); // Reset when on Buy tab
+      setCurrentHoldingQuantity(0);
     }
-    // Dependencies: activeTab, stockName (if prop changes), holdings (when user data updates)
+    
   }, [activeTab, stockName, holdings]);
 
 
   // Function to get stock quantity from holdings
   const getStockQuantity = (stockName) => {
 
-    // Use find for efficiency when expecting at most one result
     const stock = holdings.find((stock) => stock.stock_name === stockName);
     setCurrentHoldingQuantity(stock ? stock.quantity : 0);
   }
 
-  // --- Effect to show toast when orderExecuted state changes ---
-  // This useEffect correctly listens for the SSE execution event being relayed via Zustand
-  useEffect(() => {
-      if (orderExecuted) {
-          // console.log("Order executed state changed, showing toast:", orderExecuted);
-          const { message, status, stockName: executedStockName, executedPrice, action, quantity: executedQuantity } = orderExecuted; // Destructure more details
-
-          // Optional: Only show toast if the executed stock matches the currently viewed panel?
-          // Or maybe show it regardless? Let's show regardless for now.
-
-          if (status === 'success') {
-               const toastMessage = message || `${action === 'BUY' ? 'Bought' : 'Sold'} ${executedQuantity} shares of ${executedStockName} at ₹${Number(executedPrice).toFixed(2)}`;
-              toast.success(toastMessage);
-          } else {
-              const toastMessage = message || `Failed to execute order for ${executedStockName}.`;
-              toast.error(toastMessage);
-          }
-
-          // Clear the state after processing so the same execution doesn't trigger toast again
-          setOrderExecuted(null);
-         
-      }
-  }, [orderExecuted, setOrderExecuted]); // Depend on orderExecuted state and the setter action
-
 
   // Calculate total cost (derive directly from state/props)
-  // Use parsed quantity state value (which can be NaN or empty string)
-  const parsedQuantity = parseInt(quantity, 10) || 0; // Default to 0 if empty or NaN
-  const parsedLimitPrice = parseFloat(limitPrice) || 0; // Default to 0 if empty or NaN
+  const parsedQuantity = parseInt(quantity, 10) || 0; 
+  const parsedLimitPrice = parseFloat(limitPrice) || 0; 
 
   const totalCost = orderType === "market"
     ? (currentPrice * parsedQuantity)
@@ -104,27 +87,24 @@ export default function BuySellPanel({ stockName, theme }) {
   // Validate inputs and enable/disable submit button
   useEffect(() => {
     let isValid = true;
-    setError(''); // Clear previous API errors on input changes
+    setError('');
 
     // Basic validation: Quantity must be a positive integer
     if (parsedQuantity <= 0 || !Number.isInteger(parsedQuantity)) {
       isValid = false;
-      // setError("Quantity must be a positive integer."); // Consider setting specific input errors
     }
 
     // Price must be available for market orders (cannot place if price is 0 or NaN)
     if (orderType === "market" && (currentPrice <= 0 || isNaN(currentPrice))) {
         isValid = false;
-        // setError("Cannot place market order: Real-time price not available.");
     }
 
     // Active tab specific checks
     if (activeTab === "buy") {
       // Check sufficient balance
       const currentBalance = parseFloat(balance) || 0;
-      if (currentBalance < totalCost || isNaN(totalCost)) { // Also check if totalCost calculation resulted in NaN
+      if (currentBalance < totalCost || isNaN(totalCost)) {
          isValid = false;
-          // setError("Insufficient balance.");
       }
 
       if (orderType === "limit") {
@@ -132,22 +112,21 @@ export default function BuySellPanel({ stockName, theme }) {
         const minLimitPrice = currentPrice * 0.9;
         if (parsedLimitPrice <= 0 || isNaN(parsedLimitPrice) || (currentPrice > 0 && parsedLimitPrice < minLimitPrice)) {
           isValid = false;
-           // setError(`Limit price must be >= ₹${minLimitPrice.toFixed(2)}`);
+
         }
       }
-    } else { // activeTab === "sell"
-      // Check sufficient holding quantity
+    } else { 
+     
       if (parsedQuantity > (currentHoldingQuantity || 0)) {
         isValid = false;
-         // setError(`You only own ${currentHoldingQuantity} shares.`);
+        
       }
-       // Check maximum limit price for sell (example: must be <= 110% of current price)
-       // Adjust this logic based on your backend/broker rules
+     
       if (orderType === "limit") {
          const maxLimitPrice = currentPrice * 1.1;
          if (parsedLimitPrice <= 0 || isNaN(parsedLimitPrice) || (currentPrice > 0 && parsedLimitPrice > maxLimitPrice)) {
             isValid = false;
-            // setError(`Limit price must be <= ₹${maxLimitPrice.toFixed(2)}`);
+           
          }
       }
     }
@@ -160,30 +139,21 @@ export default function BuySellPanel({ stockName, theme }) {
 
     setIsSubmitDisabled(!isValid);
 
-    // Optional: Set a combined error message state here based on validation failures
-    // For now, we rely on individual messages below the inputs and the general API error state
+
   }, [quantity, limitPrice, orderType, activeTab, currentPrice, currentHoldingQuantity, balance, totalCost, isSubmitting]);
 
 
   // Handle quantity change - Allow empty input but ensure it's a number when used
   const handleQuantityChange = (e) => {
-    const value = e.target.value;
-     // Allow empty string or string containing only digits
-    if (value === '' || /^\d+$/.test(value)) {
-       setQuantity(value);
-    }
-    // Note: validation useEffect handles the conversion to number/integer check
-  };
+      setQuantity(e.target.value);
+  }
+  
 
   // Handle limit price change - Allow empty input but ensure it's a number when used
   const handleLimitPriceChange = (e) => {
-    const value = e.target.value;
-    // Allow empty string or valid floating point numbers
-     if (value === '' || /^\d*\.?\d*$/.test(value)) {
-        setLimitPrice(value);
-     }
-     // Note: validation useEffect handles the conversion to float/NaN check
-  };
+      setLimitPrice(e.target.value);
+
+  }
 
 
   const handleSubmitOrder = async (e) => {
@@ -222,17 +192,17 @@ export default function BuySellPanel({ stockName, theme }) {
         // Clear form inputs after successful placement
         setQuantity('');
         setLimitPrice('');
-        setOrderType("market"); // Reset to default order type
-        setActiveTab("buy"); // Reset to default tab (adjust if you want to stay on sell)
+        setOrderType("market"); 
+        setActiveTab("buy"); 
         fetchOrders();
 
 
       } else {
-        // --- Handle API *placement* failure ---
+       
         const errorMessage = response.data.message || "Order placement failed. Please try again.";
-        setError(errorMessage); // Still useful to show error below the form
+        setError(errorMessage); 
         console.error("Order placement failed:", response.data);
-        toast.error("Order placement failed: " + errorMessage); // Explicit error toast for API failure
+        toast.error("Order placement failed: " + errorMessage); 
 
       }
     } catch (err) {
@@ -240,10 +210,10 @@ export default function BuySellPanel({ stockName, theme }) {
        const errorMessage = err.response?.data?.message || "An error occurred while placing the order. Please try again.";
        setError(errorMessage); // Show error below the form
        console.error("Order submission error:", err);
-       toast.error("Order placement failed: " + errorMessage); // Explicit error toast for network/request errors
+       toast.error("Order placement failed: " + errorMessage);
     } finally {
-      setIsSubmitting(false); // Ensure submitting state is reset
-       // Note: placementMessage and error states will persist until next input change or submit
+      setIsSubmitting(false);
+     
     }
   };
 
@@ -341,8 +311,7 @@ export default function BuySellPanel({ stockName, theme }) {
                 // Note: input type="number" min/max are visual hints, validation useEffect is the source of truth
               />
             </div>
-            {/* Display validation messages for quantity */}
-             {/* Check against parsedQuantity for validation display logic */}
+           
              {(parsedQuantity <= 0 && quantity !== '') && ( // Show error if 0 or less, but not if input is empty
                  <p className="text-red-500 text-xs mt-1">
                    Quantity must be a positive integer.
@@ -440,7 +409,7 @@ export default function BuySellPanel({ stockName, theme }) {
 
           {/* Submit button */}
           <button
-            type="submit" // Explicitly set type to submit
+            type="submit" 
             disabled={isSubmitDisabled || isSubmitting}
             className={`w-full py-2 md:py-3 px-4 rounded-lg font-medium text-sm md:text-base transition-colors ${
               activeTab === "buy"
@@ -450,7 +419,9 @@ export default function BuySellPanel({ stockName, theme }) {
           >
             {isSubmitting ? "Processing..." : `${activeTab === "buy" ? "Buy" : "Sell"} ${stockName}`}
           </button>
-        </form> {/* Close the form element */}
+        </form>
+
+        <ToastContainer position="top-right" />
       </div>
     </>
   );

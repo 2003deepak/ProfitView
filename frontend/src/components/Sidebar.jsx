@@ -33,23 +33,10 @@ const Sidebar = () => {
   const { setLogOut } = useAuthStore();
   const { theme, changeTheme, isSidebarOpen, changeSidebarOpen } = themeStore();
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth >= 768) {
-        changeSidebarOpen(true);
-      } else {
-        changeSidebarOpen(false);
-      }
-    };
 
-    handleResize(); // Initialize
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [changeSidebarOpen]);
 
   const toggleSidebar = () => {
-    changeSidebarOpen(!isSidebarOpen);
+    changeSidebarOpen();
   };
 
   const toggleDropdown = (label) => {
@@ -234,7 +221,7 @@ const Sidebar = () => {
           </button>
         </div>
       </div>
-      <ToastContainer position="bottom-right" />
+      <ToastContainer position="top-right" />
     </>
   );
 };

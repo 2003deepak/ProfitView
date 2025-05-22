@@ -4,7 +4,7 @@ const { STOCK_MAPPINGS, basePrices } = require('../constant/stockMapping');
 const redis = require('../config/redis');
 
 const SIMULATION_MODE = process.env.SIMULATION_MODE === 'true';
-const SIMULATION_UPDATE_INTERVAL = 2000;
+const SIMULATION_UPDATE_INTERVAL = 3000;
 const MAX_PRICE_FLUCTUATION = 0.05;
 
 // Redis keys
@@ -145,8 +145,11 @@ async function updateRedisPrices(stockKey, newPriceData) {
         stockKey, 
         ...newPriceData
       }));
-      
-      // console.log(`Published price update for ${stockName} to ${REDIS_PRICE_UPDATE_CHANNEL}`); // Optional log
+
+      await redisPublisher.publish(`price-updates:${stockName}`, JSON.stringify(newPriceData));
+
+      // console.log(`Published price update for ${stockName} to price-updates with new data : ` , JSON.stringify(newPriceData)); // Optional log
+
       return true;
     }
     return false;

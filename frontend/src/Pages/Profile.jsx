@@ -123,13 +123,8 @@ export default function Profile() {
 
   return (
     <div className={`flex h-screen w-screen overflow-hidden ${bgColor} ${textColor}`}>
-      <ToastContainer 
-        position="top-right" 
-        autoClose={5000}
-        hideProgressBar={false}
-        closeOnClick
-        pauseOnHover
-      />
+      
+      <ToastContainer position="top-right" />
 
       <Sidebar />
 
