@@ -138,6 +138,9 @@ const Order = () => {
 
    // Handle edit order
    const handleEditOrder = (order) => {
+
+    // console.log("Order ID " + order.id);
+
     navigate(`/user/stock/${order.stock_name}`, {
       state: {
         prefilledData: {
@@ -145,10 +148,14 @@ const Order = () => {
           quantity: order.quantity,
           targetPrice: order.targetPrice,
           isMarketOrder: order.isMarketOrder,
-          orderId : order._id
+          orderId : order.id
         }
       }
-    });
+
+
+    }
+  
+  );
   };
 
   // Handle delete order
@@ -161,7 +168,7 @@ const Order = () => {
       );
 
       if (response.data.status === "success") {
-        // toast.success("Order deleted successfully");
+        
         fetchOrders();
         fetchUserData();
         getUserHoldings();

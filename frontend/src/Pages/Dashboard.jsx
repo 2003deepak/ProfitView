@@ -120,7 +120,7 @@ const Dashboard = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {marketIndices.map((index, i) => (
                   
-                    <StockDisplay stockName={index} />
+                    <StockDisplay key = {i} stockName={index} />
                  
                 ))}
               </div>

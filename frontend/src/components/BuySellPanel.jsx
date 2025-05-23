@@ -29,7 +29,7 @@ export default function BuySellPanel({ stockName }) {
   const parsedQuantity = useMemo(() => parseInt(quantity, 10) || 0, [quantity]);
   const parsedLimitPrice = useMemo(() => parseFloat(limitPrice) || 0, [limitPrice]);
 
-  console.log("I am rendering the BuySellPanel component");
+  // console.log("I am rendering the BuySellPanel component");
 
   // Theme classes (kept for clarity)
   const bgColor = theme === "dark" ? "bg-gray-800" : "bg-white";
@@ -89,6 +89,7 @@ export default function BuySellPanel({ stockName }) {
         setLimitPrice(data.targetPrice.toString());
       }
     }
+
   }, [location.state]);
 
   const handleSubmitOrder = async (e) => {
@@ -107,12 +108,16 @@ export default function BuySellPanel({ stockName }) {
       orderId: isEditMode ? orderId : undefined,
     };
 
+    console.log("Order Details:", orderDetails);
+
     const url = isEditMode 
-      ? "http://localhost:3000/api/user/updateOrder" 
-      : "http://localhost:3000/api/user/placeOrder";
+      ? "http://localhost:3000/api/user/order/updateOrder" 
+      : "http://localhost:3000/api/user/order/placeOrder";
 
     try {
-      const res = await axios.post(url, orderDetails, { withCredentials: true });
+
+      const res = await axios.post(url, orderDetails, { withCredentials: true }) ;
+
       if (res.data.status === "success") {
         toast.success(isEditMode ? "Order updated successfully" : "Order placed successfully");
 

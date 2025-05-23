@@ -16,6 +16,8 @@ const StockDetail = () => {
   const [selectedTimeframe, setSelectedTimeframe] = useState("1D");
   const [isLoading, setIsLoading] = useState(true);
 
+  // console.log("I am rendering the Stock Detail component");
+
   const fundamentals = {
     open: 10,
     high: 10,

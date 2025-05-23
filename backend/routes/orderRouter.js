@@ -12,7 +12,7 @@ const getOrders = require('../controllers/orderController/getOrders');
 
 router.post('/placeOrder' , isLoggedIn , placeOrder);
 router.get('/getOrders' , isLoggedIn , getOrders);
-router.put('/updateOrder' ,isLoggedIn , updateOrder);
+router.post('/updateOrder' ,isLoggedIn , updateOrder);
 router.post('/deleteOrder' ,isLoggedIn , deleteOrder);
 
 
