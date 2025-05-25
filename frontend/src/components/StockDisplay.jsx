@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { shallow } from 'zustand/shallow'; 
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { useNavigate } from "react-router";
 import themeStore from "../store/themeStore";
@@ -8,7 +9,9 @@ import { Skeleton, SkeletonCircle,SkeletonText, VStack, HStack, Box } from "@cha
 const StockDisplay = ({ stockName, isLoading }) => {
   const { theme } = themeStore((state) => state);
   const navigate = useNavigate();
-  const stockData = useStockStore((state) => state.stocks[stockName]);
+  const stockData = useStockStore((state) => state.stocks[stockName],shallow);
+
+
 
   if (isLoading || !stockData) {
   return (

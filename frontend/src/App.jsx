@@ -8,6 +8,7 @@ import About from "./Pages/About";
 import PublicLayout from "./layouts/PublicLayout";
 import MainLayout from "./layouts/MainLayout";
 import ProtectedRoute from "./components/ProtectedRoute"; 
+import AuthRoute from "./components/AuthRoute";
 import authStore from "./store/authStore"; // Zustand state for user authentication
 import Portfolio from "./Pages/Portfolio";
 import V40Stocks from "./Pages/V40Stocks";
@@ -16,6 +17,8 @@ import StockDetail from "./Pages/StockDetail";
 import Profile from "./Pages/Profile";
 import Order from './Pages/Order';
 import Settings from "./Pages/Settings";
+import ForgotPassword from "./Pages/ForgotPassword";
+import ResetPassword from "./Pages/ResetPassword";
 
 function App() {
 
@@ -26,10 +29,29 @@ function App() {
       {/* Public Routes */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Landing />} />
-        <Route path="login" element={<Login />}/>
-        <Route path="signup" element={<Signup />}/>
+
+        <Route 
+          path="login" 
+          element={
+            <AuthRoute>
+              <Login />
+            </AuthRoute>
+          }
+        />
+        
+        <Route 
+          path="signup" 
+          element={
+            <AuthRoute>
+              <Signup />
+            </AuthRoute>
+          }
+        />
 
         <Route path="about" element={<About />} />
+
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
       </Route>
 

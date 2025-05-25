@@ -12,6 +12,7 @@ const subscribeStock = require("../controllers/userController/subscribeStock");
 const getUserData = require('../controllers/userController/getUserData');
 const updateUserDetails = require('../controllers/userController/updateUserDetails');
 const getNotification = require('../controllers/userController/getNotification');
+const getPortfolioPerformance = require('../controllers/userController/getPortfolioPerformance');
 
 
 
@@ -24,6 +25,7 @@ router.get('/getHolding',isLoggedIn,getHolding);
 router.get('/getUserData',isLoggedIn,getUserData);
 router.get("/getNotifications" , isLoggedIn,getNotification);
 router.put('/updateUser',isLoggedIn,updateUserDetails);
+router.get('/getPortfolioPerformance', isLoggedIn, getPortfolioPerformance);
 
 
 

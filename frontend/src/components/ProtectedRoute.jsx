@@ -10,32 +10,32 @@ import useUserStore from '../store/userStore';
 
 const ProtectedRoute = ({ children }) => {
   const { isLoggedIn } = useAuthStore((state) => state);
-  const { connectToSSE, disconnectSSE, orderUpdates, setOrderUpdates } = useStockStore();
+  const { connectToSSE, disconnectSSE } = useStockStore();
   const { fetchOrders } = useOrderStore();
   const { fetchUserData, getUserHoldings } = useUserStore();
 
   useEffect(() => {
-    connectToSSE();
-    fetchOrders();
-    fetchUserData();
-    getUserHoldings();
+    if (isLoggedIn) {
+      connectToSSE();
+      fetchOrders();
+      fetchUserData();
+      getUserHoldings();
+    }
 
     return () => {
       disconnectSSE();
     };
-  }, []);
+  }, [isLoggedIn]); // Add isLoggedIn as dependency
 
-
-  
   if (!isLoggedIn) {
-    return <Navigate to="/login" />;
+    toast.error('Please login to access this page');
+    return <Navigate to="/login" replace />;
   }
 
   return (
     <>
       {children}
-  
-      
+      <ToastContainer />
     </>
   );
 };

@@ -48,7 +48,7 @@ const placeOrder = async (req, res) => {
         const liveData = JSON.parse(liveDataStr);
         const livePrice = liveData.price;
 
-        console.log(`💹 Live price of ${stockName} = ₹${livePrice}`);
+        // console.log(`💹 Live price of ${stockName} = ₹${livePrice}`);
 
         if (!livePrice || livePrice <= 0) {
             return res.status(400).json({ status: "fail", message: "Invalid live stock price" });

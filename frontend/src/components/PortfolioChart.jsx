@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import axios from "axios";
+import moment from "moment-timezone";
+import useUserStore from "../store/userStore";
 
 const CustomTooltip = ({ active, payload, label, theme }) => {
   if (!active || !payload?.length) return null;
+
   
   const { invested, current, gain } = payload[0].payload;
   const bg = theme === "dark" ? "bg-gray-800" : "bg-white";
@@ -10,7 +14,7 @@ const CustomTooltip = ({ active, payload, label, theme }) => {
   const bd = theme === "dark" ? "border-gray-700" : "border-gray-200";
 
   return (
-    <div className={`${bg} ${fg} p-3  border ${bd} rounded shadow-lg`}>
+    <div className={`${bg} ${fg} p-3 border ${bd} rounded shadow-lg`}>
       <p className="font-medium">{label}</p>
       <p className="text-blue-600 font-medium">
         Invested: ₹{invested.toLocaleString("en-IN")}
@@ -29,69 +33,61 @@ function PortfolioChart({ theme }) {
   const [chartData, setChartData] = useState([]);
   const [currentVal, setCurrentVal] = useState({ amount: 0, profitPct: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Generate more dynamic portfolio data with realistic fluctuations
-  const generatePortfolioData = () => {
-    const data = [];
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30); // 30 days back
-    
-    let invested = 50000;
-    let current = 51000;
-    
-    for (let i = 0; i <= 30; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
-      
-      // Simulate market movements with more volatility
-      const dailyChange = (Math.random() - 0.45) * 0.03; // -3% to +3% daily change
-      current = current * (1 + dailyChange);
-      
-      // Add investments periodically
-      if (i % 5 === 0 && i !== 0) {
-        const investment = 10000 + Math.random() * 20000;
-        invested += investment;
-        // Investment bump affects current value
-        current += investment * (0.9 + Math.random() * 0.2);
-      }
-      
-      data.push({
-        date: date.toISOString().split('T')[0],
-        invested: Math.round(invested),
-        current: Math.round(current),
-        gain: ((current - invested) / invested) * 100
-      });
-    }
-    
-    return data;
-  };
+  const holdings = useUserStore(state => state.holdings);
 
   useEffect(() => {
-    const data = generatePortfolioData();
-    
-    const processedData = data.map((item) => {
-      const date = new Date(item.date);
-      return {
-        formattedDate: date.toLocaleDateString("en-IN", { month: "short", day: "numeric" }),
-        invested: item.invested,
-        current: item.current,
-        gain: item.gain,
-        isProfit: item.gain >= 0
-      };
-    });
-    
-    setChartData(processedData);
-    
-    if (processedData.length > 0) {
-      const lastEntry = processedData[processedData.length - 1];
-      setCurrentVal({
-        amount: lastEntry.current,
-        profitPct: lastEntry.gain
-      });
-    }
-    
-    setIsLoading(false);
-  }, []);
+    const fetchPortfolioData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const response = await axios.get("http://localhost:3000/api/user/getPortfolioPerformance",{ 
+          withCredentials: true },
+        );
+
+        if (response.data.status !== "success") {
+          throw new Error(response.data.message || "Failed to fetch portfolio data");
+        }
+
+        const { performance } = response.data.data;
+
+        const processedData = performance.map((item) => {
+          const date = moment.tz(item.date, "Asia/Kolkata");
+          const invested = Math.round(item.investedAmount);
+          const current = Math.round(item.actualAmount);
+          const gain = invested ? ((current - invested) / invested) * 100 : 0;
+
+          return {
+            formattedDate: date.format("MMM D"),
+            invested,
+            current,
+            gain,
+            isProfit: gain >= 0,
+          };
+        });
+
+        setChartData(processedData);
+
+        if (processedData.length > 0) {
+          const lastEntry = processedData[processedData.length - 1];
+          setCurrentVal({
+            amount: lastEntry.current,
+            profitPct: lastEntry.gain,
+          });
+        }
+
+        setIsLoading(false);
+      } catch (err) {
+        console.error(`[${new Date().toISOString()}] Error fetching portfolio data:`, err.message);
+        setError(err.message || "Failed to load portfolio data");
+        setIsLoading(false);
+      }
+    };
+
+    fetchPortfolioData();
+  }, [holdings]);
 
   // Chart styling
   const grid = theme === "dark" ? "#374151" : "#E5E7EB";
@@ -99,7 +95,7 @@ function PortfolioChart({ theme }) {
   const profitColor = "#22C55E";
   const lossColor = "#EF4444";
   const invColor = "#3B82F6";
-  
+
   // Determine if overall portfolio is in profit
   const isOverallProfit = currentVal.profitPct >= 0;
 
@@ -111,9 +107,16 @@ function PortfolioChart({ theme }) {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full w-full p-4">
-     
       <div className="h-[400px]">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
@@ -135,7 +138,7 @@ function PortfolioChart({ theme }) {
               tick={{ fill: txt, fontSize: 12 }}
               axisLine={{ stroke: grid }}
               tickLine={{ stroke: grid }}
-              tickFormatter={(v) => `₹${v / 1000}k`}
+              tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
               domain={['auto', 'auto']}
               tickMargin={10}
             />
@@ -149,7 +152,6 @@ function PortfolioChart({ theme }) {
               formatter={(value) => <span className="text-sm">{value}</span>}
             />
 
-            {/* Invested Amount Line (dashed) */}
             <Line
               type="monotone"
               dataKey="invested"
@@ -161,7 +163,6 @@ function PortfolioChart({ theme }) {
               activeDot={{ r: 6 }}
             />
 
-            {/* Current Value Line (solid) - color changes based on profit/loss */}
             <Line
               type="monotone"
               dataKey="current"
@@ -174,8 +175,6 @@ function PortfolioChart({ theme }) {
           </LineChart>
         </ResponsiveContainer>
       </div>
-
-      
     </div>
   );
 }

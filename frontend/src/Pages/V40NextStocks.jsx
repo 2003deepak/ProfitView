@@ -1,8 +1,8 @@
 import { React, useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
+import useStockStore from "../store/stockStore.js";
 import TopSearchBar from "../components/TopSearchBar";
 import themeStore from "../store/themeStore";
-import useStockStore from "../store/stockStore.js";
 import DashboardHeader from "../components/DashboardHeader";
 import { useNavigate } from "react-router";
 import {
@@ -63,35 +63,9 @@ const V40NextStocks = () => {
     { name: "Multi Commodity Exchange of India", symbol: "MCX", price: "₹1,594.60" , change: "+1.2%"},
   ];
 
-  const marketIndices = [
-    { 
-      name: "Nifty 50", 
-      value: stocks["Nifty 50"]?.price || "N/A", 
-      change: stocks["Nifty 50"]?.percentageChange ? 
-        `${stocks["Nifty 50"].percentageChange > 0 ? '+' : ''}${stocks["Nifty 50"].percentageChange.toFixed(2)}%` : "N/A", 
-      isPositive: stocks["Nifty 50"]?.percentageChange >= 0 
-    },
-    { 
-      name: "Nifty Bank", 
-      value: stocks["Nifty Bank"]?.price || "N/A", 
-      change: stocks["Nifty Bank"]?.percentageChange ? 
-        `${stocks["Nifty Bank"].percentageChange > 0 ? '+' : ''}${stocks["Nifty Bank"].percentageChange.toFixed(2)}%` : "N/A", 
-      isPositive: stocks["Nifty Bank"]?.percentageChange >= 0 
-    },
-    { 
-      name: "SENSEX", 
-      value: stocks["SENSEX"]?.price || "N/A", 
-      change: stocks["SENSEX"]?.percentageChange ? 
-        `${stocks["SENSEX"].percentageChange > 0 ? '+' : ''}${stocks["SENSEX"].percentageChange.toFixed(2)}%` : "N/A", 
-      isPositive: stocks["SENSEX"]?.percentageChange >= 0 
-    },
-    { 
-      name: "Russell 2000", 
-      value: "2,042.51", 
-      change: "+0.72%", 
-      isPositive: true 
-    }
-  ];
+  const marketIndices = ["Nifty 50", "Nifty Bank", "SENSEX"];
+
+  
 
   // Theme colors
   const bgColor = theme === "dark" ? "bg-gray-900" : "bg-gray-50";
@@ -141,15 +115,13 @@ const V40NextStocks = () => {
             <div className={`rounded-xl shadow-sm pt-2 pb-6`}>
               <h2 className="text-xl font-semibold mb-4 px-4">Market Indices</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
                 {marketIndices.map((index, i) => (
-                  <StockDisplay 
-                    key={i}
-                    stockName={index.name}
-                    currentPrice={index.value}
-                    change={index.change}
-                    isPositive={index.isPositive}
-                  />
-                ))}
+                                  
+                                    <StockDisplay key = {i} stockName={index} />
+                                 
+                                ))}
+                
               </div>
             </div>
 

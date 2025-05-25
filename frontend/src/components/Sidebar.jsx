@@ -89,8 +89,7 @@ const Sidebar = () => {
     },
     { label: 'Order', icon: Bell, to: '/user/order' },
     { label: 'Profile', icon: User, to: '/user/profile' },
-    { label: 'Settings', icon: Settings, to: '/user/settings' },
-    { label: 'Help Center', icon: HelpCircle, to: '/user/test' },
+    { label: 'Settings', icon: Settings, to: '/user/settings' }
   ];
 
   return (

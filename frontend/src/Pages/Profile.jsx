@@ -8,12 +8,14 @@ import themeStore from "../store/themeStore"
 import useStockStore from "../store/stockStore"
 import useUserStore from "../store/userStore"
 import { toast, ToastContainer } from 'react-toastify'
+import useOrderStore from "../store/orderStore";
 
 export default function Profile() {
   const { theme } = themeStore((state) => state)
   const [isEditing, setIsEditing] = useState(false)
   const [portfolioChangePercent, setPortfolioChangePercent] = useState(2.22)
-  const { stocks } = useStockStore((state) => state)
+  
+  const orders = useOrderStore(state => state.orders)
   
   // Use user store
   const {
@@ -24,7 +26,6 @@ export default function Profile() {
     balance,
     profileImage,
     joinedAt,
-    tradesCompleted,
     portfolioPerformance,
     fetchUserData,
     updateUserData,
@@ -129,23 +130,15 @@ export default function Profile() {
                   className={`${cardBgColor} rounded-xl border ${borderColor} p-6 shadow-sm`}
                 >
                   <div className="flex flex-col items-center text-center">
+                    
                     <div className="relative mb-4 group">
-                      <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-blue-500">
-                        <img
-                          src={profileImage || "/placeholder.svg"}
-                          alt="Profile"
-                          width={96}
-                          height={96}
-                          className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
-                        />
+                      <div className="w-24 h-24 rounded-full border-2 border-blue-500 bg-blue-100 flex justify-center items-center shadow-md transition-transform duration-200 ease-in-out group-hover:scale-105">
+                        <p className="text-5xl font-extrabold text-blue-700 select-none">
+                          {username.charAt(0).toUpperCase()}
+                        </p>
                       </div>
-                      <button
-                        className={`absolute bottom-0 right-0 p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors shadow-md`}
-                        onClick={() => alert("Change profile picture")}
-                      >
-                        <Camera className="h-4 w-4" />
-                      </button>
                     </div>
+
 
                     <h1 className="text-xl font-bold mb-1">
                       {firstName} {lastName}
@@ -154,8 +147,8 @@ export default function Profile() {
 
                     <div className={`w-full p-3 rounded-lg bg-blue-50 border border-blue-100 text-blue-800 text-sm mb-4 ${theme === 'dark' ? 'bg-blue-900 bg-opacity-20 border-blue-800 text-blue-200' : ''}`}>
                       <div className="flex justify-between items-center">
-                        <span>Available Balance:</span>
-                        <span className="font-medium text-base">
+                        <span className={`font-medium text-base ${textColor}`}>Available Balance:</span>
+                        <span className={`font-medium text-base ${textColor}`}>
                           ₹{balance}
                         </span>
                       </div>
@@ -201,7 +194,7 @@ export default function Profile() {
                         <LineChart className="h-4 w-4 mr-2" />
                         Trades Completed
                       </p>
-                      <p className="font-medium">{tradesCompleted}</p>
+                      <p className="font-medium">{orders.allOrders.length}</p>
                     </div>
                     <div className={`p-4 rounded-lg border ${borderColor} hover:border-blue-500 transition-colors`}>
                       <p className={`text-sm ${mutedTextColor} mb-1 flex items-center`}>

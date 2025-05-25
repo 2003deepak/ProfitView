@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { DollarSign, Info } from "lucide-react";
+import { shallow } from 'zustand/shallow'; 
 import useStockStore from '../store/stockStore';
 import axios from 'axios';
 import { useNavigate, useLocation } from "react-router-dom";
@@ -20,7 +21,7 @@ export default function BuySellPanel({ stockName }) {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const currentPrice = useStockStore(state => state.stocks[stockName]?.price || 0);
+  const currentPrice = useStockStore(state => state.stocks[stockName]?.price || 0 , shallow);
   const theme = themeStore(state => state.theme);
   const holdings = useUserStore(state => state.holdings);
   const balance = useUserStore(state => state.balance);
@@ -29,7 +30,7 @@ export default function BuySellPanel({ stockName }) {
   const parsedQuantity = useMemo(() => parseInt(quantity, 10) || 0, [quantity]);
   const parsedLimitPrice = useMemo(() => parseFloat(limitPrice) || 0, [limitPrice]);
 
-  // console.log("I am rendering the BuySellPanel component");
+  //console.log("I am rendering the BuySellPanel component");
 
   // Theme classes (kept for clarity)
   const bgColor = theme === "dark" ? "bg-gray-800" : "bg-white";
