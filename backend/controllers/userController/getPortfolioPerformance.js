@@ -30,7 +30,7 @@ const getPortfolioPerformance = async (req, res) => {
     }
 
     // Cache miss, fetch from MongoDB
-    console.log(`[${new Date().toISOString()}] Cache miss for user ${userId}, querying DB`);
+    // console.log(`[${new Date().toISOString()}] Cache miss for user ${userId}, querying DB`);
     const performanceData = await portfolioPerformanceModel.findOne({ userId });
 
     if (!performanceData) {

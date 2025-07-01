@@ -5,11 +5,11 @@ const nodemailer = require("nodemailer");
 
 // Mailer setup (Mailtrap or real SMTP)
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST ?? "smtp.mailtrap.io",
-  port: process.env.SMTP_PORT ?? 2525,
+  host: process.env.SMTP_HOST ,
+  port: process.env.SMTP_PORT ,
   auth: {
-    user: process.env.MAILTRAP_USER,
-    pass: process.env.MAILTRAP_PASSWORD
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASSWORD
   }
 });
 
@@ -48,7 +48,7 @@ const requestForgotPassword = async (req, res) => {
     return res.status(200).json({ status: "success" , message: "Password reset email sent" });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ status : "success" , message: "Email sending failed" });
+    return res.status(500).json({ status : "fail" , message: "Email sending failed" });
   }
 };
 
