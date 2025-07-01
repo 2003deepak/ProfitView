@@ -1,120 +1,87 @@
 import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toaster } from "../components/ui/toaster";
 import useStockStore from '../store/stockStore';
-import themeStore from "../store/themeStore";
 
-const MainLayout = ({ role }) => {
-    const orderUpdates = useStockStore(state => state.orderUpdates);
-    const setOrderUpdates = useStockStore(state => state.setOrderUpdates);
-    const { theme } = themeStore(state => state);
+const MainLayout = () => {
+  const orderUpdates = useStockStore((state) => state.orderUpdates);
+  const setOrderUpdates = useStockStore((state) => state.setOrderUpdates);
 
-    useEffect(() => {
-        if (orderUpdates) {
-            const {
-                updateType,
-                status,
-                stockName,
-                executedPrice,
-                action,
-                quantity,
-                message,
-                previousPrice,
-                newPrice
-            } = orderUpdates;
+  useEffect(() => {
+    if (orderUpdates) {
+      const {
+        updateType,
+        status,
+        stockName,
+        executedPrice,
+        action,
+        quantity,
+        message,
+        previousPrice,
+        newPrice,
+      } = orderUpdates;
 
-            const toastOptions = {
-                position: "top-right",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: theme
-            };
+      switch (updateType) {
+        case 'Order Executed':
+          if (status === 'success') {
+            toaster.create({
+              title:
+                message ||
+                `${action === 'BUY' ? 'Bought' : 'Sold'} ${quantity} shares of ${stockName} at ₹${Number(executedPrice).toFixed(2)}`,
+              type: 'success',
+            });
+          } else {
+            toaster.create({
+              title: message || `Failed to execute ${action} order for ${stockName}`,
+              type: 'error',
+            });
+          }
+          break;
 
-            switch (updateType) {
-                case 'Order Executed':
-                    if (status === 'success') {
-                        toast.success(
-                            message || `${action === 'BUY' ? 'Bought' : 'Sold'} ${quantity} shares of ${stockName} at ₹${Number(executedPrice).toFixed(2)}`,
-                            toastOptions
-                        );
-                    } else {
-                        toast.error(
-                            message || `Failed to execute ${action} order for ${stockName}`,
-                            toastOptions
-                        );
-                    }
-                    break;
+        case 'Order Failed':
+          toaster.create({
+            title: message || `Order failed: Market hours are over`,
+            type: 'error',
+          });
+          break;
 
-                case 'Order Failed':
-                    if (status === 'fail') {
-                        toast.error(
-                            message || `Order failed: Market hours are over`,
-                            toastOptions
-                        );
-                    }
-                    break;
+        case 'Order Updated':
+          toaster.create({
+            title:
+              status === 'success'
+                ? message || `Order updated: ${stockName} price changed from ₹${previousPrice} to ₹${newPrice}`
+                : message || `Failed to update order for ${stockName}`,
+            type: status === 'success' ? 'info' : 'warning',
+          });
+          break;
 
-                case 'Order Updated':
-                    if (status === 'success') {
-                        toast.info(
-                            message || `Order updated: ${stockName} price changed from ₹${previousPrice} to ₹${newPrice}`,
-                            toastOptions
-                        );
-                    } else {
-                        toast.warning(
-                            message || `Failed to update order for ${stockName}`,
-                            toastOptions
-                        );
-                    }
-                    break;
+        case 'Order Deleted':
+          toaster.create({
+            title:
+              message ||
+              (status === 'success'
+                ? `Order for ${stockName} has been successfully deleted`
+                : `Failed to delete order for ${stockName}`),
+            type: status === 'success' ? 'success' : 'error',
+          });
+          break;
 
-                case 'Order Deleted':
-                    if (status === 'success') {
-                        toast.success(
-                            message || `Order for ${stockName} has been successfully deleted`,
-                            { ...toastOptions, autoClose: 4000 }
-                        );
-                    } else {
-                        toast.error(
-                            message || `Failed to delete order for ${stockName}`,
-                            { ...toastOptions, autoClose: 4000 }
-                        );
-                    }
-                    break;
+        default:
+          console.warn('Unknown order update type:', updateType);
+          break;
+      }
 
-                default:
-                    console.warn('Unknown order update type:', updateType);
-                    break;
-            }
+      setOrderUpdates(null);
+    }
+  }, [orderUpdates, setOrderUpdates]);
 
-            setOrderUpdates(null);
-        }
-    }, [orderUpdates, setOrderUpdates, theme]);
-
-    return (
-        <div className="flex">
-            <div className="flex-1">
-                <Outlet />
-            </div>
-            <ToastContainer 
-                position="top-right"
-                autoClose={5000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme={theme}
-            />
-        </div>
-    );
+  return (
+    <div className="flex">
+      <div className="flex-1">
+        <Outlet />
+      </div>
+    </div>
+  );
 };
 
 export default MainLayout;

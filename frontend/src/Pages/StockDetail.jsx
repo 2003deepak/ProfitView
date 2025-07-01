@@ -199,7 +199,7 @@ const StockDetail = () => {
 
               {/* Stock info (Key Statistics) */}
 
-              {fundamentals && (
+              {/* {fundamentals && (
                 <div className={`${cardBg} rounded-xl border ${borderColor} p-6 mb-6`}>
                   <h2 className="text-xl font-bold mb-4">Key Statistics</h2>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
@@ -219,15 +219,15 @@ const StockDetail = () => {
                       <p className={`${secondaryTextColor} text-sm mb-1`}>Volume</p>
                       <p className="font-medium">{fundamentals.volume}</p>
                     </div>
-                     {/* Add other key stats from fundamentals */}
+          
                       <div>
                         <p className={`${secondaryTextColor} text-sm mb-1`}>Avg. Volume</p>
                         <p className="font-medium">{fundamentals.avgVolume}</p>
                       </div>
-                       {/* Add more if needed */}
+                      
                   </div>
                 </div>
-              )}
+              )} */}
 
 
               {/* Fundamentals (Financial Ratios etc) */}
@@ -245,7 +245,7 @@ const StockDetail = () => {
                       </div>
                       <div>
                         <p className={`${secondaryTextColor} text-sm mb-1`}>Dividend Yield</p>
-                        <p className="font-medium">{fundamentals.dividendYield}%</p>
+                        <p className="font-medium">{fundamentals.dividendYield}</p>
                       </div>
                       <div>
                         <p className={`${secondaryTextColor} text-sm mb-1`}>EPS</p>

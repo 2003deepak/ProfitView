@@ -4,7 +4,7 @@ import { shallow } from 'zustand/shallow';
 import useStockStore from '../store/stockStore';
 import axios from 'axios';
 import { useNavigate, useLocation } from "react-router-dom";
-import { toast, ToastContainer } from 'react-toastify';
+import { toaster } from "../components/ui/toaster";
 import useUserStore from "../store/userStore";
 import useOrderStore from "../store/orderStore";
 import themeStore from "../store/themeStore";
@@ -30,7 +30,6 @@ export default function BuySellPanel({ stockName }) {
   const parsedQuantity = useMemo(() => parseInt(quantity, 10) || 0, [quantity]);
   const parsedLimitPrice = useMemo(() => parseFloat(limitPrice) || 0, [limitPrice]);
 
-  //console.log("I am rendering the BuySellPanel component");
 
   // Theme classes (kept for clarity)
   const bgColor = theme === "dark" ? "bg-gray-800" : "bg-white";
@@ -120,7 +119,11 @@ export default function BuySellPanel({ stockName }) {
       const res = await axios.post(url, orderDetails, { withCredentials: true }) ;
 
       if (res.data.status === "success") {
-        toast.success(isEditMode ? "Order updated successfully" : "Order placed successfully");
+    
+        toaster.create({
+            title: isEditMode ? "Order updated successfully" : "Order placed successfully",
+            type: 'success',
+        });
 
         setQuantity('');
         setLimitPrice('');
@@ -136,7 +139,7 @@ export default function BuySellPanel({ stockName }) {
     } catch (err) {
       const message = err.response?.data?.message || err.message || "Error placing order";
       setError(message);
-      toast.error(message);
+
     } finally {
       setIsSubmitting(false);
     }
@@ -323,7 +326,7 @@ export default function BuySellPanel({ stockName }) {
           </button>
         </form>
 
-        <ToastContainer position="top-right" />
+        
       </div>
     </>
   );

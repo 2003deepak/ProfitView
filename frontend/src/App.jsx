@@ -8,7 +8,6 @@ import About from "./Pages/About";
 import PublicLayout from "./layouts/PublicLayout";
 import MainLayout from "./layouts/MainLayout";
 import ProtectedRoute from "./components/ProtectedRoute"; 
-import AuthRoute from "./components/AuthRoute";
 import authStore from "./store/authStore"; // Zustand state for user authentication
 import Portfolio from "./Pages/Portfolio";
 import V40Stocks from "./Pages/V40Stocks";
@@ -33,18 +32,18 @@ function App() {
         <Route 
           path="login" 
           element={
-            <AuthRoute>
+           
               <Login />
-            </AuthRoute>
+           
           }
         />
         
         <Route 
           path="signup" 
           element={
-            <AuthRoute>
+           
               <Signup />
-            </AuthRoute>
+            
           }
         />
 

@@ -15,7 +15,7 @@ const StockChart = () => {
           "symbol": "BSE:TCS",
           "interval": "D",
           "timezone": "Etc/UTC",
-          "theme": "light",
+          "theme": "dark",
           "style": "1",
           "locale": "en",
           "hide_top_toolbar": true,
