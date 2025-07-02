@@ -2,6 +2,16 @@
 
 **Profit View** is a real-time virtual trading platform that simulates market conditions using live data. Practice trading strategies, track performance, and learn market dynamics - all with virtual funds.  
 
+
+# 🎥 Watch the Demo:
+
+<p align="center">
+  <a href="https://youtu.be/0KXy0Izqw7Y" target="_blank">
+    <img src="https://img.youtube.com/vi/0KXy0Izqw7Y/0.jpg" alt="Watch Profit View Demo" width="600"/>
+  </a>
+</p>
+
+
 ## 🧰 Tech Stack  
 
 ### Frontend  
